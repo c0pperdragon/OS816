@@ -1,0 +1,21 @@
+Summary of calling conventions, when using memory model "large":
+
+Large code, large data.
+Stack is always in bank 0
+
+Emulation off, M/A 16 bit, X/Y 16 bit
+Function calls with 24 bit addressing
+
+Registers A,B,X,Y can be freely modified
+Direct register D must be conserved (needed for accessing current stack frame).
+DBR contains bank for data/udata area and must not be changed
+Stack frame including operands is removed by called function.
+Numerical Operands are passed as 16 or 32 bit values on stack
+Pointers are passed as 24 bit on stack
+Called function removes operands from stack before returning (super ugly code!)
+Returned number value is returned in A as 16 bit. When 32 bit values, the high bits are in X.
+Return pointers are in A (low 16 bits) and X (bank number)
+
+General code generation is based on 16 bit quantities throughout. 
+Accessing bytes or computations with 8 bit precision cause extra overhead.
+
