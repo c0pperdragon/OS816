@@ -3,23 +3,23 @@
 A small breadboard circuit to use the 65C816 processor and a tiny operating system
 (in fact just some startup code and a few libraries) to run on it.
 This project also provides some examples (starting with the most basic LED animation) 
-to use these libraries and actually get the WDC tool chain from to work.
+to use these libraries and actually get the WDC tool chain to work.
 
 ![alt text](os816breadboard.jpg "Reference setup on breadboard")
 
 ## 65C816 reference setup
 
-This processor is a tricky beast to use in a circuit as it has some unusual quirks to need consideration,
+This processor is a tricky beast to use in a circuit as it has some unusual quirks that need consideration,
 especially when you want to use more than 64KB of address space.
 
-1. RD and WR signals need to be externally generated
+1. RD and WR signals need to be externally generated.
 2. Address bits 16-23 are multiplexed with the address bus.
 3. Difficult to use flat RAM and ROM areas, as both the stack as well as the initial boot code needs to be 
 placed in bank 0.
 
-Points 1 and 2 are solved with some extra logic on the board. Point 3 is solved by using the emulation bit
+Points 1 and 2 are just solved with some extra logic on the board. Point 3 is solved by using the emulation bit
 to change the memory map at startup time. Once the program is running it switches to native mode to execute code
-from the high address, leaving all the RAM flat in the low address range.
+from the high address, using a flat 512KB address range for the RAM.
 
 ## Compiling for the platform
 
