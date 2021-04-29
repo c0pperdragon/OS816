@@ -6,12 +6,12 @@
     XREF _BEG_UDATA
     XREF _END_UDATA
     XREF ~~main
-    XREF ~~portset
+    XREF ~~portout
 
     CODE
 START:
     ; enter emulation mode - now we can also access RAM
-    CLC ;clear carry
+    CLC 
     XCE ;clear emulation
 
     ; set up 16 bit mode for all registers and memory access
@@ -52,7 +52,7 @@ DONE:
 ;    ; set the output port to a defined state
     LDA #$00FF
     PHA
-    JSL	>~~portset
+    JSL	>~~portout
 
     ; start the main function, and stop CPU upon return
     JSL >~~main
@@ -70,7 +70,7 @@ DONE:
     ; get the code running from the true ROM address.
     ; If interrupt vectors need to be installed also, this must be done
     ; in RAM, because in native mode the whole of bank 0 is use for RAM
-RESET SECTION   ; must locate at 80FFF8 (FFF8 in ROM) by the linker
+RESET SECTION   ; must locate at 80FFF8 by the linker
     JMP >START   ; long jump to the startup code (4 byte instruction)
     DW $FFF8     ; reset vector is relative to bank 0
     ENDS

@@ -9,27 +9,18 @@ const byte pattern[] =   // constant data (KDATA)
     0x01, 0x03, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0
 };
 
-// static data with initialization (DATA)
-word speed = 100; 
-word animpointer = 8;   
-
-// UDATA segment (should initially be zeroed out)
-byte zeroinit;  
-
-void portout_indirect(byte* p)
-{
-    portclear((byte)0xff);
-    portset(*p);
-}
-
+word animpointer = 8;  // initialized variable data (DATA)
+    
 void main()
 {
-    while(!zeroinit)
+
+    for (;;)
     {
-        byte p = portin();
-        animpointer = (animpointer+1) % 16;
-        p = p & pattern[animpointer];
-        portout_indirect(&p);
-        sleep(speed);  
+        byte i = portin();
+        i = i & pattern[animpointer];
+        portout (i);
+        sleep(100);  
+        
+        animpointer=(animpointer+1)&0x0F;
     }
 }

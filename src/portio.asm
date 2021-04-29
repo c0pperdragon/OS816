@@ -1,31 +1,26 @@
-    udata
-    xdef outportdata
-outportdata:
-    ds 1     ; shadow register for output value
-    ends
 
     CODE
-    xdef ~~portset
-~~portset:
+    xdef ~~portout
+~~portout:
     longa on
     longi on
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          16-bit parameter 
 
-    SEP #$30 ;8 bit registers
+    LDA <3,S                
+    TAX                     ; get low 8 bits of parameter into the high bits of X    
+
+    SEP #$20 ;8 bit accu/memory
     longa off
 
-    LDA <4,S
-    EOR #$00                ; only necessary to make execution time equal to portclear
-    ORA |outportdata        ; set more bits
-    STA >$800000            ; send to port and temporarily switch to IO mode
-    STA |outportdata        ; keep value and switch back to normal mode
-
-    REP #$30 ;16 bit registers
+    LDA <4,S                ; get low 8 bits of parameter from stack
+    STA >$400000,X          ; write 8 bits to IO range, provide data also on address lines A8-A15
+     
+    REP #$20 ;16 bit accu/memory
     longa on
 
-    ; take down stack and return
+    ; take down parameters, fix return address and return
     LDA <2,S
     STA <4,S
     PLA 
@@ -33,34 +28,6 @@ outportdata:
     RTL
     ENDS
 
-    CODE
-    xdef ~~portclear
-~~portclear:
-    longa on
-    longi on
-    ; initial stack layout:  
-    ;   SP+1, SP+2, SP+3    return address
-    ;   SP+4, SP+5          16-bit parameter 
-
-    SEP #$30 ;8 bit registers
-    longa off
-
-    LDA <4,S
-    EOR #$FF 
-    AND |outportdata
-    STA >$800000            ; send to port and temporarily switch to IO mode
-    STA |outportdata        ; keep value and switch back to normal mode
-
-    REP #$30 ;16 bit registers
-    longa on
-
-    ; take down stack and return
-    LDA <2,S
-    STA <4,S
-    PLA 
-    STA <1,S
-    RTL
-    ENDS
 
     CODE
     xdef ~~portin
@@ -73,15 +40,11 @@ outportdata:
     SEP #$30 ;8 bit registers
     longa off
 
-    LDA |outportdata        ; get current output pattern
-    STA >$800000            ; switch to IO mode without disturbing the output signal
-    LDA <1,S                ; any read from RAM now reads from input port instead
-    PHA                     ; writing to RAM turns off IO mode 
-    PLA                     ;
+    LDA >$400000            ; read 8 bits from IO range
 
     REP #$30 ;16 bit registers
     longa on
-
+    
     AND #$00FF               ; clear higher bits
     RTL
     ENDS
