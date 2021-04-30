@@ -16,8 +16,8 @@
     CLC
     XCE 
     BCC delayloop
-    ; emulated by Bernd. use different delays for this (tuned by measurment)
-    LDY #60
+    ; emulated by Bernd. use different delays for this (tuned by measurement)
+    LDY #85
     
 delayloop:
     LDA <4,S   
