@@ -6,14 +6,20 @@
     XREF _BEG_UDATA
     XREF _END_UDATA
     XREF ~~main
-    XREF ~~portout
 
     CODE
 START:
+    LONGI OFF
+    LONGA OFF
+    
     ; enter emulation mode - now we can also access RAM
     CLC 
     XCE ;clear emulation
 
+    ;  ; set the output port to a defined state
+    LDA #$FF
+    STA >$40FFFF
+    
     ; set up 16 bit mode for all registers and memory access
     REP #$30 ;16 bit registers
     LONGI ON
@@ -57,11 +63,6 @@ SKIPDATA:
     INY              ;get the next byte address int Y
     MVN #^_BEG_UDATA,#^_BEG_UDATA 
 SKIPUDATA: 
-
-;    ; set the output port to a defined state
-    LDA #$00FF
-    PHA
-    JSL	>~~portout
 
     ; start the main function, and stop CPU upon return
     JSL >~~main

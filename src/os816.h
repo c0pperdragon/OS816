@@ -4,11 +4,12 @@
 typedef unsigned int word;
 typedef unsigned char byte;
 
+void sleep(word milliseconds);
+
 void portout(byte data);
 byte portin(void); 
 
-void uartsend(byte data);
-byte uartreceive(void);
+void send(byte data);
+byte receive(void);
 
-void sleep(word milliseconds);
-
+void print(char* text);
