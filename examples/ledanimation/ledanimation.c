@@ -9,14 +9,14 @@ const byte pattern[] =   // constant data (KDATA)
     0x01, 0x03, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0
 };
 
-word animpointer = 8;  // initialized variable data (DATA)
+u16 animpointer = 8;  // initialized variable data (DATA)
     
 void main()
 {
 
     for (;;)
     {
-        byte i = portin();
+        u16 i = portin();
         i = i & pattern[animpointer];
         portout (i);
         sleep(100);  

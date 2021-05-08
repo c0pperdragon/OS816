@@ -83,8 +83,9 @@ send1:
 donesend:
     TXA
     
-    ; tuned delay loop to get a data rate of 19200 baud
-    LDX #106   
+    ; tuned delay loop to get a data rate of 9600 baud @ 10 Mhz
+    LDX #202  
+
     ; detect underlying hardware
     CLC
     XCE 
@@ -97,5 +98,3 @@ delay2:
     BNE delay2 ; 3 cycles
     RTS
     ENDS
-
-    
