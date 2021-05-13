@@ -17,7 +17,10 @@ void sieve(bool printall)
     count = 0;
     checksum = 0;
     
+    if (printall) { print("Resetting\n"); }
     for (i=0; i<TOTAL; i++) { isprime[i]=1; }
+    if (printall) { print("Computing\n"); }
+    
     for (i=2; i<TOTAL; i++) 
     { 
         if (isprime[i])
@@ -43,14 +46,16 @@ void sieve(bool printall)
     printu16(count);
     print(" Checksum: ");
     printu16(checksum);    
-    print ("\n");
+    print("\n");
 }
 
 void main()
 {
-    print ("Compute prime numbers from 2 to ");
-    printu16 (TOTAL-1);
-    print ("\n");
+    print("Compute prime numbers from ");
+    print("2");
+    print(" to ");
+    printu16((u16)(TOTAL-1));
+    print("\n");
     
     for (;;) { sieve(false); }
 }

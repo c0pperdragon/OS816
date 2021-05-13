@@ -52,15 +52,16 @@ SKIPDATA:
     LONGA OFF
       LDA #0
       STA >_BEG_UDATA  
-    REP #$20 ;8 bit accu/memory
+    REP #$20 ;16 bit accu/memory
     LONGA ON   
+    LDA #_END_UDATA-_BEG_UDATA
     DEC A
     BEQ SKIPUDATA ; buffer is of length 1, so no clear loop is needed
     DEC A    
     ; make a overlapping transfer to zero out the whole buffer
     LDX #<_BEG_UDATA ;get start of area into X
     TXY
-    INY              ;get the next byte address int Y
+    INY              ;get the next byte address into Y
     MVN #^_BEG_UDATA,#^_BEG_UDATA 
 SKIPUDATA: 
 

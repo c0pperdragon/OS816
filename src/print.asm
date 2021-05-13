@@ -48,7 +48,7 @@ L2	equ	1
 L3	equ	1
 	ends
 	efunc
-	data
+	kdata
 	xdef	~~digitvalues
 ~~digitvalues:
 	dw	$2710,$3E8,$64,$A
@@ -76,7 +76,7 @@ digit_2	set	6
 	lda	<L7+pos_1
 	asl	A
 	tax
-	lda	|~~digitvalues,X
+	lda	>~~digitvalues,X
 	sta	<L7+digitvalue_2
 	stz	<L7+digit_2
 	bra	L10008

@@ -12,7 +12,7 @@ void print(char* text)
     }    
 }
 
-u16 digitvalues[4] = { 10000, 1000, 100, 10 };
+const u16 digitvalues[4] = { 10000, 1000, 100, 10 };
 void printu16(u16 value)
 {
     bool haveleading = false;
