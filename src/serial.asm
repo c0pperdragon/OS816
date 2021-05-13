@@ -90,8 +90,8 @@ donesend:
     CLC
     XCE 
     BCC delay2  ; genuine 65c816
-    
-    LDX #2   ; fine-tuned to work on Bernd also
+
+    LDX #17     ; fine-tuned to give same speed on Bernd €12 Mhz
     
 delay2:
     DEX        ; 2 cycles
