@@ -7,7 +7,6 @@
 #define TOTAL_SQRT 240
 byte isprime[TOTAL];
 
-
 void sieve(bool printall)
 {
     u16 i,j;

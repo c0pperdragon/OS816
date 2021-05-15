@@ -1,5 +1,6 @@
 // IO and toolbox functions to be used from programs compiled with the WDC compiler
-// All timing relevant functions assume that the machine is running with a 10Mhz clock
+// All timing relevant functions will auto-detect the machine and 
+// adjust timing loops accordingly
 
 typedef unsigned char byte;
 typedef unsigned int u16;
@@ -18,3 +19,5 @@ u16 receive(void);
 
 void print(char* text);
 void printu16(u16 value);
+
+void readline(char* buffer, u16 bsize);
