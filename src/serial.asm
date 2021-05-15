@@ -12,17 +12,23 @@
 ; All other output pins are just set high when the serial communcation is running, and
 ; are left high after that. 
 
+    ; one additional byte as input buffer
+    UDATA
+hasbuffered:  ds 1
+buffereddata: ds 1
+    ENDS
+
+    ; send on byte via serial
     CODE
     xdef ~~send
 ~~send:
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          data to send (in lower bits only)
-    
     SEP #$30 ; switch to 8 bit registers
     longa off
     longi off
-
+    
     ; must wait until the receiver is ready to accept new data (our CTS must be low)
 waitforready:
     LDA >$400000
@@ -65,12 +71,20 @@ waitforready:
     RTL
 
 
-
+    ; receive one byte via serial
     xdef ~~receive
 ~~receive:
     SEP #$30 ; switch to 8 bit registers
     longa off
     longi off
+
+    ; when there is a byte already in buffer, consume this first
+    LDA |hasbuffered
+    BEQ bufferempty
+    STZ |hasbuffered
+    LDY |buffereddata
+    BRA donereceive    
+bufferempty:
 
     ; must notify the sender that we are read to accept data
     LDA #$FD      ; set RTS low
@@ -81,6 +95,10 @@ waitforincommingdata:
     LDA >$400000
     LSR
     BCS waitforincommingdata
+
+    ; prevent more data from coming in
+    LDA #$FF      ; set RTS to high
+    STA >$40FF00  ; sent value on data bus and high address lines
     
     ; wait to reach the middle of the first data bit
     JSR waitfor1_5bits
@@ -104,12 +122,56 @@ waitforincommingdata:
     ROR A       
     JSR sendreceivebit ; bit 7
     ROR A
+    TAY
     
+    ; wait some additional time in case one more byte arrives
+    LDX #255
+waitformoreincommingdata:
+    DEX
+    BEQ donereceive
+    LDA >$400000
+    LSR
+    BCS waitformoreincommingdata
+    
+    ; keep current byte here temporarily
+    STY |hasbuffered
+    
+    ; read the second byte
+    JSR waitfor1_5bits
+
+    LDA #$FF   ; outgoing bits are all 1s
+    ; receive the byte bit by bit
+    ROR A
+    JSR sendreceivebit ; bit 0
+    ROR A       
+    JSR sendreceivebit ; bit 1
+    ROR A       
+    JSR sendreceivebit ; bit 2
+    ROR A       
+    JSR sendreceivebit ; bit 3
+    ROR A       
+    JSR sendreceivebit ; bit 4
+    ROR A       
+    JSR sendreceivebit ; bit 5
+    ROR A       
+    JSR sendreceivebit ; bit 6
+    ROR A       
+    JSR sendreceivebit ; bit 7
+    ROR A
+    
+    ; set up buffer and return correct value here
+    STA |buffereddata
+    LDY |hasbuffered
+    LDA #1
+    STA |hasbuffered
+    
+donereceive:
+    ; the return value is provided in Y
+    TYA
     ; switch to 16 bit registers
     REP #$30 
     LONGI ON
     LONGA ON
-    
     ; take down stack and return result in 16 bit
     AND #$00FF
     RTL
@@ -149,7 +211,7 @@ donesend:
     CLC
     XCE 
     BCC delay2  
-    LDX #17     ; fine-tuned to give same speed on Bernd €12 Mhz
+    LDX #15     ; fine-tuned to give same speed on Bernd €12 Mhz
 delay2:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles
@@ -168,14 +230,19 @@ delay2:
     LONGI OFF
 waitfor1_5bits:
 
-    LDX #202    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    LDX #300    ; 9600 baud on genuine 65c816 @ 10 Mhz 
     ; detect underlying hardware
     CLC
     XCE 
     BCC delay3      
-    LDX #17     ; fine-tuned to give same speed on Bernd €12 Mhz
+    LDX #20     ; fine-tuned to give same speed on Bernd €12 Mhz
 delay3:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles
     
     RTS
+
+    ENDS
+    END 
+
+    

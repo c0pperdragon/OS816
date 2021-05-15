@@ -4,11 +4,11 @@
 
 void main()
 {
-    byte buffer[100];
+    byte buffer[50];
     for (;;)
     {
         print("What is your name?\n"); 
-        readline(buffer, 100);
+        readline(buffer, 50);
         print("Hi, '");
         print(buffer);
         print("'!\n");

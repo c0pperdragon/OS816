@@ -7,8 +7,8 @@ void readline(char* buffer, u16 bsize)
     while (len+1<bsize)
     {
         u16 c = receive();
-        if (c=='\n') break;  // terminate line with '\n'
-        if (c<' ') continue;  // ignore other control characters
+        if (c==10 || c==13) break; // terminate line with either CR or LF
+        if (c<32) continue;        // ignore other control characters
         buffer[len] = (byte)c;
         len++;
     }
