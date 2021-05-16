@@ -83,7 +83,7 @@ waitforready:
     BEQ bufferempty
     STZ |hasbuffered
     LDY |buffereddata
-    BRA donereceive    
+    BRL donereceive    
 bufferempty:
 
     ; must notify the sender that we are read to accept data
@@ -125,7 +125,11 @@ waitforincommingdata:
     TAY
     
     ; wait some additional time in case one more byte arrives
-    LDX #255
+    LDX #255   ; loops to wait on genuine 65c816
+    CLC
+    XCE 
+    BCC waitformoreincommingdata  
+    LDX #35    ; loops to wait on Bernd
 waitformoreincommingdata:
     DEX
     BEQ donereceive
@@ -230,12 +234,16 @@ delay2:
     LONGI OFF
 waitfor1_5bits:
 
-    LDX #300    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    LDX #19     ; fine-tuned to wait 1.5 bits on Bernd €12 Mhz
     ; detect underlying hardware
     CLC
     XCE 
-    BCC delay3      
-    LDX #20     ; fine-tuned to give same speed on Bernd €12 Mhz
+    BCS delay3      
+    LDX #100   ; delay for one extra half bit 
+halfdelay:
+    DEX        ; 2 cycles
+    BNE halfdelay ; 3 cycles
+    LDX #202    ; 9600 baud on genuine 65c816 @ 10 Mhz 
 delay3:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles
