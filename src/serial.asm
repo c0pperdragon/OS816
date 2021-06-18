@@ -192,30 +192,21 @@ donereceive:
 sendreceivebit:
     TAY
    
-    ; send either bit 0 or bit 1
-    BCS send1
-send0:
-    LDA #$FE
-    STA >$40FE00  ; send data on data bus and high address lines
-    SEC
-    BCS donesend  ; do branch-taken to balance out the previous branch-not-taken
-send1: 
-    LDA #$FF
-    STA >$40FF00  ; send data on data bus and high address lines
-    SEC
-    BCS donesend  ; do branch-not-taken to balance out the previous branch-taken
-donesend:
+    ; bild output data with carry flag in bit 0, the rest is high bits
+    ROL
+    ORA #$FE
+    STA >$400000  ; write to output port
 
     ; fetch input
     LDA >$400000
     
     ; tuned delay loop 
-    LDX #202    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    LDX #203    ; 9600 baud on genuine 65c816 @ 10 Mhz 
     ; detect underlying hardware
     CLC
     XCE 
     BCC delay2  
-    LDX #15     ; fine-tuned to give same speed on Bernd €12 Mhz
+    LDX #16     ; fine-tuned to give same speed on Bernd €12 Mhz
 delay2:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles

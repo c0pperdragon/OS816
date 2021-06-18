@@ -8,14 +8,11 @@
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          16-bit parameter 
 
-    LDA <3,S                
-    TAX                     ; get low 8 bits of parameter into the high bits of X    
-
     SEP #$20 ;8 bit accu/memory
     longa off
 
     LDA <4,S                ; get low 8 bits of parameter from stack
-    STA >$400000,X          ; write 8 bits to IO range, provide data also on address lines A8-A15
+    STA >$400000            ; write 8 bits to IO range
      
     REP #$20 ;16 bit accu/memory
     longa on
