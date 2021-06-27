@@ -3,12 +3,12 @@
 
 void print(char* text)
 {
-    for (;;)
+    u16 i;    
+    for (i=0;;i++)
     {
-        char c = *text;
+        char c = text[i];
         if (c=='\0') { return; }
         send (c);
-        text++;
     }    
 }
 

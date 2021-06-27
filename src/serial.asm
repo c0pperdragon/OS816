@@ -201,7 +201,7 @@ sendreceivebit:
     LDA >$400000
     
     ; tuned delay loop 
-    LDX #203    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    LDX #200    ; 9600 baud on genuine 65c816 @ 10 Mhz 
     ; detect underlying hardware
     CLC
     XCE 
@@ -219,7 +219,7 @@ delay2:
     RTS
 
     
-    ; Wait for 1.5 bits.
+    ; Wait for about 1.5 bits.
     ; This subroutine uses 8-bit registers.
     LONGA OFF
     LONGI OFF
@@ -234,7 +234,7 @@ waitfor1_5bits:
 halfdelay:
     DEX        ; 2 cycles
     BNE halfdelay ; 3 cycles
-    LDX #202    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    LDX #250   ; 9600 baud on genuine 65c816 @ 10 Mhz 
 delay3:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles
