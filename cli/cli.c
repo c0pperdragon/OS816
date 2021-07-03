@@ -5,6 +5,7 @@
 #define BUFFERSIZE 200
 #define MAXTOKENS 10
 
+void jump_10000(u16 argc, char* argv[]);
 
 
 void cmd_dir(u16 argc, char* argv[])
@@ -19,10 +20,9 @@ void cmd_run(u16 argc, char* argv[])
         print ("No program given to execute\n");
         return;
     }
-    print ("Loading program ");
-    print (argv[1]);
-    print ("\n");
-    return;
+    
+    // start execution of code on location 0x10000
+    jump_10000(argc, argv);
 }
 
 void cmd_tokens(u16 argc, char* argv[])
