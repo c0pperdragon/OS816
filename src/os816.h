@@ -24,5 +24,7 @@ u16 receive(void);
 
 void print(char* text);
 void printu16(u16 value);
-
 void readline(char* buffer, u16 bsize);
+
+u16 tokenize(char* buffer, char** tokens, u16 maxtokens);
+bool strequal(char* s1, char* s2);
