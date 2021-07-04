@@ -9,7 +9,7 @@ typedef void (*main_t)(u16 argc, char** argv);
 
 void cmd_dir(u16 argc, char* argv[])
 {
-    print ("dir command not implemented yet\n");
+    print("dir command not implemented yet\n");
 }
 
 void cmd_run(u16 argc, char* argv[])
@@ -40,11 +40,11 @@ void cmd_tokens(u16 argc, char* argv[])
 
 void cmd_help(u16 argc, char* argv[])
 {
-    print ("Built-in commands:\n");
-    print ("    help   ......... this info\n");
-    print ("    dir <prefix> ... show all files whose name starts with< <prefix>\n");
-    print ("    run <file> ..... load an executable file and run it\n");
-    print ("    tokens ......... test command to show tokenizing result\n");
+    print("Built-in commands:\n");
+    print("    help   ......... this info\n");
+    print("    dir <prefix> ... show all files whose name starts with< <prefix>\n");
+    print("    run <file> ..... load an executable file and run it\n");
+    print("    tokens ......... test command to show tokenizing result\n");
 }
 
 
@@ -54,12 +54,12 @@ void main()
     char* tokens[MAXTOKENS];
     u16 numtokens;
     
-    print ("OS816 command line interface 0.1  (c) 2021 Reinhard Grafl\n");
+    print("OS816 command line interface 0.1  (c) 2021 Reinhard Grafl\n");
     
     for (;;)
     {
-        print (">");
-        readline(buffer, BUFFERSIZE);
+        print(">");
+        input(buffer, BUFFERSIZE);
         
         numtokens = tokenize(buffer, tokens, MAXTOKENS);        
         if (numtokens>0)

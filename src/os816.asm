@@ -40,8 +40,8 @@ HEADER SECTION
     xdef ~~printu16
 ~~printu16:
     JMP >$000006
-    xdef ~~readline
-~~readline:
+    xdef ~~input
+~~input:
     JMP >$000007
     xdef ~~tokenize
 ~~tokenize:

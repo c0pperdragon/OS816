@@ -8,7 +8,7 @@ void main()
     for (;;)
     {
         print("What is your name?\n"); 
-        readline(buffer, 50);
+        input(buffer, 50);
         print("Hi, '");
         print(buffer);
         print("'!\n");

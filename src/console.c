@@ -36,7 +36,7 @@ void printu16(u16 value)
     send ('0' + value);    
 }
 
-void readline(char* buffer, u16 bsize)
+void input(char* buffer, u16 bsize)
 {
     u16 len=0;
     while (len+1<bsize)
