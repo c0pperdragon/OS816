@@ -10,6 +10,9 @@
 #include "os816.h"
 
 
+byte mist[4] = { (byte)'M', (byte)'i', (byte)'s', (byte)'t' };
+byte nl[2];
+
 void putbyte(byte* buffer, u32 pos, byte value)
 {
     buffer[pos] = value;
@@ -17,11 +20,11 @@ void putbyte(byte* buffer, u32 pos, byte value)
 
 void prepare(byte* buffer)
 {
-    putbyte(buffer,0L,(byte)'M');
-    putbyte(buffer,1L,(byte)'i');
-    putbyte(buffer,2L,(byte)'s');
-    putbyte(buffer,3L,(byte)'t');
-    putbyte(buffer,4L,(byte)'\0');
+    putbyte(buffer,0L, mist[0]);
+    putbyte(buffer,1L, mist[1]);
+    putbyte(buffer,2L, mist[2]);
+    putbyte(buffer,3L, mist[3]);
+    putbyte(buffer,4L, 0);
 }
 
 u16 subl(long int a, long int b)
@@ -42,6 +45,9 @@ void main()
     byte* extension = (byte*) 0x30000;
     byte* extension2 = (byte*) 0x40000;
 
+    nl[0] = (byte)10;
+    nl[1] = (byte)0;
+    
     extension[0] = 64; 
     extension[1] = 0; 
     prepare(buffer+0xFFFE), 
@@ -49,9 +55,9 @@ void main()
     extension[0xFFFF] = 47;
     extension2[0] = 11;
     
-    print("\n");
+    print(nl);
     printu16(subl(206544421, 206500000));
-    print("\n");
+    print(nl);
     
     for (;;)
     {
@@ -74,7 +80,7 @@ void main()
         // try to access a 16-bit word accross bank boundaries
         printindirect((u16*) (extension+0xFFFF)); // writes 2863
 
-        print("\n");
+        print(nl);
         sleep(1000);
     }
 }

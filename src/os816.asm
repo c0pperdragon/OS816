@@ -6,8 +6,6 @@
 ; after sanity check and patching of the jump tables it will be called.
 
 HEADER SECTION
-; This is the magic code in the first 4 bytes of any OS816 executable. 
-    DB 79,83,8,16
 
 ; This is the entry point of the executable 
 ; The actual main method must have the usual signature: u16 argc, char** argv
@@ -52,5 +50,6 @@ HEADER SECTION
 ~~strequal:
     JMP >$000009
     
+    DB 0  ; end marker
     ENDS
 

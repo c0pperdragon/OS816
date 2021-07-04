@@ -1,3 +1,4 @@
 *.obj
 *.hex
 *.lib
+*.bin

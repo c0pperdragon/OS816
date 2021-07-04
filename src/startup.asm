@@ -1,7 +1,8 @@
 
     ; external references
-    XREF _BEG_UDATA
-    XREF _END_UDATA
+    XREF _ROM_BEG_DATA
+    XREF _BEG_DATA
+    XREF _END_DATA
     XREF ~~main
 
     CODE
@@ -15,7 +16,7 @@ START:
 
     ;  ; set the output port to a defined state
     LDA #$FF
-    STA >$40FFFF
+    STA >$400000
     
     ; set up 16 bit mode for all registers and memory access
     REP #$30 ;16 bit registers
@@ -26,27 +27,14 @@ START:
     LDA #$FFFF 
     TCS 
 
-    ; the UDATA segment is cleared before start. The DBR will then always contain
-    ; the bank of this the UDATA, which must not exceed 64K.
-    LDA #_END_UDATA-_BEG_UDATA ;get total number of bytes to clear
-    BEQ SKIPUDATA 
-    ; clear first byte of buffer
-    SEP #$20 ;8 bit accu/memory
-    LONGA OFF
-      LDA #0
-      STA >_BEG_UDATA  
-    REP #$20 ;16 bit accu/memory
-    LONGA ON   
-    LDA #_END_UDATA-_BEG_UDATA
-    DEC A
-    BEQ SKIPUDATA ; buffer is of length 1, so no clear loop is needed
-    DEC A    
-    ; make a overlapping transfer to zero out the whole buffer
-    LDX #<_BEG_UDATA ;get start of area into X
-    TXY
-    INY              ;get the next byte address into Y
-    MVN #^_BEG_UDATA,#^_BEG_UDATA 
-SKIPUDATA: 
+    ; copy initial content into DATA segment 
+    LDA #_END_DATA-_BEG_DATA ;number of bytes to copy
+    BEQ SKIP ;if none, just skip
+    DEC A ;less one for MVN instruction
+    LDX #<_ROM_BEG_DATA ;get source into X
+    LDY #<_BEG_DATA ;get dest into Y
+    MVN #(^_ROM_BEG_DATA)+$80,#^_BEG_DATA ;copy bytes
+SKIP: 
 
     ; start the main function, and stop CPU upon return
     JSL >~~main

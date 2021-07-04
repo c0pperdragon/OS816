@@ -13,9 +13,9 @@
 ; are left high after that. 
 
     ; one additional byte as input buffer
-    UDATA
-hasbuffered:  ds 1
-buffereddata: ds 1
+    DATA
+hasbuffered:  db 0
+buffereddata: db 0
     ENDS
 
     ; send on byte via serial
