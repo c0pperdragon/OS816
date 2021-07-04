@@ -24,7 +24,7 @@ void prepare(byte* buffer)
     putbyte(buffer,1L, mist[1]);
     putbyte(buffer,2L, mist[2]);
     putbyte(buffer,3L, mist[3]);
-    putbyte(buffer,4L, 0);
+    putbyte(buffer,4L, (byte)0);
 }
 
 u16 subl(long int a, long int b)

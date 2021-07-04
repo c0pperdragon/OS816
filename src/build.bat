@@ -9,6 +9,9 @@ WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP console.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP string.c
 WDCLIB -A ..\bin\core.lib portio.obj sleep.obj serial.obj console.obj string.obj
 
-WDC816AS os816.asm -O..\bin\os816.obj
+WDC816AS header.asm -O..\bin\header.obj
+FOR /R "header\" %%F IN (*.asm) DO WDC816AS "%%F"
+FOR /R "header\" %%F IN (*.obj) DO WDCLIB -A ..\bin\header.lib "%%F"
 
 del *.obj
+del header\*.obj
