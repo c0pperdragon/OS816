@@ -1,6 +1,5 @@
-// IO and toolbox functions to be used from programs compiled with the WDC compiler
-// All timing relevant functions will auto-detect the machine and 
-// adjust timing loops accordingly
+// IO and toolbox functions to be used from programs compiled with the WDC compiler.
+// All timing relevant functions will auto-detect the machine and adjust timing loops accordingly.
 
 typedef unsigned char byte;
 typedef unsigned char u8;
@@ -13,6 +12,8 @@ typedef signed long int i32;
 typedef unsigned int bool;
 #define true 1
 #define false 0
+
+void main(u16 argc, byte** argv);
 
 void sleep(u16 milliseconds);
 

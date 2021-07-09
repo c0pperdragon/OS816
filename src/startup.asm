@@ -37,6 +37,10 @@ START:
 SKIP: 
 
     ; start the main function, and stop CPU upon return
+    LDA #0
+    PHA
+    PHA
+    PHA
     JSL >~~main
     STP
     ENDS
