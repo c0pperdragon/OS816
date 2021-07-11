@@ -4,9 +4,16 @@
     XREF _BEG_DATA
     XREF _END_DATA
     XREF ~~main
-
+    
+    ; exports 
+    xdef ~~heap_end
+    xdef ~~heap_start
+~~heap_start  equ $10000 
+~~heap_end    equ $80000
+    
     CODE
 START:
+
     LONGI OFF
     LONGA OFF
     
@@ -49,8 +56,11 @@ SKIP:
     ; get the code running from the true ROM address.
     ; If interrupt vectors need to be installed also, this must be done
     ; in RAM, because in native mode the whole of bank 0 is use for RAM
-RESET SECTION   ; must locate at 80FFF8 by the linker
+RESET SECTION
+    ORG $FFF8
     JMP >START   ; long jump to the startup code (4 byte instruction)
     DW $FFF8     ; reset vector is relative to bank 0
+    DW $0000     ; to fill up remaining space
     ENDS
+    
     END 

@@ -7,7 +7,8 @@
 // - arrays crossing page boundaries can be accessed
 // - pointer arithmethic of the C compiler seems inconsistent (16-bit only?)
 
-#include "os816.h"
+#include <os816.h>
+#include <stdio.h>
 
 
 byte mist[4] = { (byte)'M', (byte)'i', (byte)'s', (byte)'t' };

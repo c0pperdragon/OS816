@@ -1,13 +1,15 @@
 // example program to do some writing to the serial port
 
-#include "os816.h"
+#include <stdio.h>
+#include <os816.h>
 
 
-void main()
+int main(int argc, char** argv)
 {
-    for (;;)
+    int i;
+    for (i=0; i<5; i++)
     {
-        print("Mist!\n"); 
+        puts("Mist!"); 
         sleep(1000);
     }
 }

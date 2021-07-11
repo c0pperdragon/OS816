@@ -1,13 +1,13 @@
 
 #include "os816.h"
 
-void portout(u16 data)
+void portout(int data)
 {
-    *((byte*) 0x400000) = (byte) data; 
+    *((unsigned char *) 0x400000) = (unsigned char) data; 
 }
 
-u16 portin(void)
+int portin(void)
 {
-    byte b = *((byte*) 0x400000);
-    return (u16)b;
+    unsigned char b = *((unsigned char *) 0x400000);
+    return (int)b;
 }

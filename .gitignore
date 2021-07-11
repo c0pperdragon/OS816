@@ -2,3 +2,4 @@
 *.hex
 *.lib
 *.bin
+*.TMP

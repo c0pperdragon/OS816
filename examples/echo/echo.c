@@ -1,16 +1,13 @@
-// example program to access the UART for output and input
 
-#include "os816.h"
+#include <stdio.h>
 
-void main()
+int main(int argc, char** argv)
 {
-    byte buffer[50];
+    char buffer[200];
     for (;;)
     {
-        print("What is your name?\n"); 
-        input(buffer, 50);
-        print("Hi, '");
-        print(buffer);
-        print("'!\n");
+        printf("What is your name?\n"); 
+        gets(buffer);   // DANGER! prone to buffer overrun
+        printf("Hi, '%s'!\n", buffer);
     }
 }

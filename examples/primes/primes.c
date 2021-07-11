@@ -1,24 +1,24 @@
 // example program to compute prime numbers
 // this should give the result: number 5133  checksum 33852
 
-#include "os816.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #define TOTAL 50000
 #define TOTAL_SQRT 240
-byte isprime[TOTAL];
 
-void sieve(bool printall)
+void sieve(char isprime[], int printall)
 {
-    u16 i,j;
-    u16 count;
-    u16 checksum;
+    unsigned int i,j;
+    unsigned int count;
+    unsigned int checksum;
         
     count = 0;
     checksum = 0;
     
-    if (printall) { print("Resetting\n"); }
+    if (printall) { printf("Resetting\n"); }
     for (i=0; i<TOTAL; i++) { isprime[i]=1; }
-    if (printall) { print("Computing\n"); }
+    if (printall) { printf("Computing\n"); }
     
     for (i=2; i<TOTAL; i++) 
     { 
@@ -28,9 +28,8 @@ void sieve(bool printall)
             checksum += i;
             
             if (printall) 
-            {   printu16(i);
-                print(" ");
-            }
+            {   printf("%u ",i);
+            }   
             if (i<TOTAL_SQRT)
             {
                 for (j=i+i; j<TOTAL; j=j+i)
@@ -40,21 +39,14 @@ void sieve(bool printall)
             }
         }
     }
-    if (printall) { print("\n"); }
-    print("Number of primes: ");
-    printu16(count);
-    print(" Checksum: ");
-    printu16(checksum);    
-    print("\n");
+    if (printall) { printf("\n"); }
+    printf("Number of primes: %u Checksum: %u\n", count,checksum);
 }
 
-void main()
+int main(int arc, char** argv)
 {
-    print("Compute prime numbers from ");
-    print("2");
-    print(" to ");
-    printu16((u16)(TOTAL-1));
-    print("\n");
-    
-    for (;;) { sieve(false); }
+    char* buffer;
+    printf("Compute prime numbers from %u to %u\n", 2, (TOTAL-1));
+    buffer = (char*) 0x20000; // malloc((size_t) TOTAL);
+    for (;;) { sieve(buffer,0); }
 }
