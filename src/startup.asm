@@ -10,18 +10,14 @@
     ; exports 
     xdef ~~heap_end
     xdef ~~heap_start
-~~heap_start  equ $10000 
-~~heap_end    equ $80000
+~~heap_start  equ $20000 
+~~heap_end    equ $30000
     
     CODE
 START:
 
     LONGI OFF
     LONGA OFF
-    
-    ; enter emulation mode - now we can also access RAM
-    CLC 
-    XCE ;clear emulation
 
     ;  ; set the output port to a defined state
     LDA #$FF
@@ -73,15 +69,27 @@ NOCLEAR:
     STP
     ENDS
 
-    ; The initial reset vector and a single long jump instruction to 
-    ; get the code running from the true ROM address.
-    ; If interrupt vectors need to be installed also, this must be done
-    ; in RAM, because in native mode the whole of bank 0 is use for RAM
+    
+    
+    ; This is a very tricky startup code that needs to work with both
+    ; the original 65c816 as well as the Bernd emulator.
 RESET SECTION
-    ORG $FFF8
-    JMP >START   ; long jump to the startup code (4 byte instruction)
-    DW $FFF8     ; reset vector is relative to bank 0
-    DW $0000     ; to fill up remaining space
+   ORG $FFF2
+    ; The original CPU will come up in emulation mode which has a different
+    ; memory map so it can access the ROM via bank 0. 
+    ; In this case we must switch to a true ROM bank and turn off emulation.
+ORIGINAL65C816:           ; FFF2
+    JMP >TOHIGHBANK  
+TOHIGHBANK:               ; FFF6
+    CLC 
+    XCE                
+    ; Bernd emulation will not use the reset vectors, but will directly jump to this
+    ; location with emulation already turned off
+BERND:                    ; FFF8
+    JMP >START
+    ; The reset vector for the 65C816
+RESETVECTOR:              ; FFFC
+    DW $FFF2
     ENDS
     
     END 

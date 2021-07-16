@@ -651,9 +651,9 @@ L40:
 	db	$64,$21,$00
 	ends
 	code
-	xdef	~~main
+	xdef	~~tt
 	func
-~~main:
+~~tt:
 	longa	on
 	longi	on
 	tsc
@@ -662,8 +662,94 @@ L40:
 	tcs
 	phd
 	tcd
+a_0	set	4
+b_0	set	6
+f_1	set	0
+	pei	<L45+b_0
+	pei	<L45+a_0
+	jsl	~~testovf
+	sta	<L46+f_1
+	pea	#^L44
+	pea	#<L44
+	pea	#6
+	jsl	~~printf
+	lda	<L46+f_1
+	and	#<$1
+	beq	L47
+	lda	#^L44+13
+	tax
+	lda	#<L44+13
+	bra	L49
+L47:
+	lda	#^L44+18
+	tax
+	lda	#<L44+18
+L49:
+	sta	<R0
+	stx	<R0+2
+	pei	<R0+2
+	pei	<R0
+	pea	#6
+	jsl	~~printf
+	lda	<L46+f_1
+	and	#<$4
+	beq	L50
+	lda	#^L44+23
+	tax
+	lda	#<L44+23
+	bra	L52
+L50:
+	lda	#^L44+28
+	tax
+	lda	#<L44+28
+L52:
+	sta	<R0
+	stx	<R0+2
+	pei	<R0+2
+	pei	<R0
+	pea	#6
+	jsl	~~printf
+	pea	#^L44+33
+	pea	#<L44+33
+	pea	#6
+	jsl	~~printf
+	lda	<L45+2
+	sta	<L45+2+4
+	lda	<L45+1
+	sta	<L45+1+4
+	pld
+	tsc
+	clc
+	adc	#L45+4
+	tcs
+	rtl
+L45	equ	6
+L46	equ	5
+	ends
+	efunc
+	kdata
+L44:
+	db	$6F,$76,$65,$72,$66,$6C,$6F,$77,$20,$61,$74,$20,$00,$41,$44
+	db	$44,$20,$00,$20,$20,$20,$20,$00,$53,$55,$42,$20,$00,$20,$20
+	db	$20,$20,$00,$0A,$00
+	ends
+	code
+	xdef	~~main
+	func
+~~main:
+	longa	on
+	longi	on
+	tsc
+	sec
+	sbc	#L55
+	tcs
+	phd
+	tcd
 argc_0	set	4
 argv_0	set	6
+	pea	#<$4e20
+	pea	#<$7530
+	jsl	~~tt
 	jsl	~~test16bitoverboundaries
 	jsl	~~testarrayaccrossboundaries
 	jsl	~~testlongarrayindex
@@ -673,25 +759,27 @@ argv_0	set	6
 	jsl	~~portout
 	lda	#$0
 	tay
-	lda	<L45+2
-	sta	<L45+2+6
-	lda	<L45+1
-	sta	<L45+1+6
+	lda	<L55+2
+	sta	<L55+2+6
+	lda	<L55+1
+	sta	<L55+1+6
 	pld
 	tsc
 	clc
-	adc	#L45+6
+	adc	#L55+6
 	tcs
 	tya
 	rtl
-L45	equ	0
-L46	equ	1
+L55	equ	0
+L56	equ	1
 	ends
 	efunc
+	xref	~~testovf
 	xref	~~strcpy
 	xref	~~strcmp
 	xref	~~_flsbuf
 	xref	~~sprintf
+	xref	~~printf
 	xref	~~send
 	xref	~~portout
 	xref	~~_iob

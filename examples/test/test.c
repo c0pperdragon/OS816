@@ -126,8 +126,9 @@ void testsprintf(void)
 
 // run suit of tests
 
+
 int main(int argc, char** argv)
-{
+{     
     // memory access tests
     test16bitoverboundaries();
     testarrayaccrossboundaries();
