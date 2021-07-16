@@ -3,6 +3,8 @@
     XREF _ROM_BEG_DATA
     XREF _BEG_DATA
     XREF _END_DATA
+    XREF _BEG_UDATA
+    XREF _END_UDATA
     XREF ~~main
     
     ; exports 
@@ -36,12 +38,31 @@ START:
 
     ; copy initial content into DATA segment 
     LDA #_END_DATA-_BEG_DATA ;number of bytes to copy
-    BEQ SKIP ;if none, just skip
+    BEQ SKIPCOPY ;if none, just skip
     DEC A ;less one for MVN instruction
     LDX #<_ROM_BEG_DATA ;get source into X
     LDY #<_BEG_DATA ;get dest into Y
     MVN #(^_ROM_BEG_DATA)+$80,#^_BEG_DATA ;copy bytes
-SKIP: 
+SKIPCOPY: 
+
+    ; set D register to the bank of UDATA
+    LDA #^_BEG_UDATA
+    TCD
+
+    ; clear UDATA segment
+    LDA #_END_UDATA-_BEG_UDATA ; number of bytes to clear
+    BEQ NOCLEAR
+    LDX #<_BEG_UDATA  
+    SEP #$20     ; for 8-bit memory access
+    STZ <0,X     ; clear first byte
+    REP #$20  
+    DEA     
+    BEQ NOCLEAR
+    TXY   ; set up copy instruction for forward replication
+    INY
+    DEA  
+    MVN #^_BEG_UDATA,#^_BEG_UDATA
+NOCLEAR:
 
     ; start the main function, and stop CPU upon return
     LDA #0

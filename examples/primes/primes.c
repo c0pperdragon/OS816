@@ -45,8 +45,10 @@ void sieve(char isprime[], int printall)
 
 int main(int arc, char** argv)
 {
+    char line[10];
     char* buffer;
-    printf("Compute prime numbers from %u to %u\n", 2, (TOTAL-1));
+
+    printf("Computing primes from %i to %u\n", 2, (unsigned int) (TOTAL-1));
     buffer = (char*) 0x20000; // malloc((size_t) TOTAL);
     for (;;) { sieve(buffer,0); }
 }

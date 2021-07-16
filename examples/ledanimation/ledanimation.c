@@ -1,4 +1,3 @@
-// short program for the OS816 environment
 // simple LED animation in C
 
 #include <os816.h>
