@@ -50,7 +50,7 @@ int main(int arc, char** argv)
     long a;
 
     printf("Computing primes from %i to %u\n", 2, (unsigned int) (TOTAL-1));
-    buffer = (char*) 0x20000; // malloc((size_t) TOTAL);
+    buffer = (char*) malloc((size_t) TOTAL);
     a = (long) buffer;
     printf ("Using buffer at %i:%i\n", (int) (a>>16),  (int) a);
     for (;;) { sieve(buffer,0); }

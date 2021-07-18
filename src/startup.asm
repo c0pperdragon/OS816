@@ -7,11 +7,6 @@
     XREF _END_UDATA
     XREF ~~main
     
-    ; exports 
-    xdef ~~heap_end
-    xdef ~~heap_start
-~~heap_start  equ $20000 
-~~heap_end    equ $30000
     
     CODE
 START:
@@ -32,15 +27,6 @@ START:
     LDA #$FFFF 
     TCS 
 
-    ; copy initial content into DATA segment 
-    LDA #_END_DATA-_BEG_DATA ;number of bytes to copy
-    BEQ SKIPCOPY ;if none, just skip
-    DEC A ;less one for MVN instruction
-    LDX #<_ROM_BEG_DATA ;get source into X
-    LDY #<_BEG_DATA ;get dest into Y
-    MVN #(^_ROM_BEG_DATA)+$80,#^_BEG_DATA ;copy bytes
-SKIPCOPY: 
-
     ; set D register to the bank of UDATA
     LDA #^_BEG_UDATA
     TCD
@@ -60,6 +46,16 @@ SKIPCOPY:
     MVN #^_BEG_UDATA,#^_BEG_UDATA
 NOCLEAR:
 
+    ; Copy initial content into DATA segment. there are at least the
+    ; heap vectors in this segment, so no need to check for its existence.
+    ; Also the Data Bank Register will be correctly set to this bank  
+    ; by the MVN instruction    
+    LDA #_END_DATA-_BEG_DATA ;number of bytes to copy
+    DEC A ;less one for MVN instruction
+    LDX #<_ROM_BEG_DATA ;get source into X
+    LDY #<_BEG_DATA ;get dest into Y
+    MVN #(^_ROM_BEG_DATA)+$80,#^_BEG_DATA ;copy bytes
+
     ; start the main function, and stop CPU upon return
     LDA #0
     PHA
@@ -70,7 +66,17 @@ NOCLEAR:
     ENDS
 
     
-    
+    ; Define the vectors to the heap area
+    xdef ~~heap_end
+    xdef ~~heap_start
+    DATA
+~~heap_start:
+    DB $00,$00,$01,$00    
+~~heap_end:
+    DB $FF,$FF,$07,$00
+    ENDS
+
+        
     ; This is a very tricky startup code that needs to work with both
     ; the original 65c816 as well as the Bernd emulator.
 RESET SECTION
@@ -92,4 +98,5 @@ RESETVECTOR:              ; FFFC
     DW $FFF2
     ENDS
     
-    END 
+
+    END
