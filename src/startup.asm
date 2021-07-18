@@ -10,7 +10,6 @@
     
     CODE
 START:
-
     LONGI OFF
     LONGA OFF
 
@@ -65,6 +64,14 @@ NOCLEAR:
     STP
     ENDS
 
+    
+    ; Very simple way to terminate the program
+    xdef ~~_exit
+    CODE
+~~_exit:
+    STP
+    ENDS
+    
     
     ; Define the vectors to the heap area
     xdef ~~heap_end

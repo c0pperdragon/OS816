@@ -19,8 +19,7 @@ void test(int result, int expected)
 {
     checkcounter++;
     if (result==expected) { return; }
-    portout (checkcounter);
-    for (;;) {}
+    printf ("Failed test %d: Expected %d but received %d\n", checkcounter, expected, result);
 }
 
 void teststr(char* result, char* expected)
@@ -32,8 +31,7 @@ void teststr(char* result, char* expected)
         if (result[i]!=expected[i]) { break; }
         if (result[i]=='\0') { return; }
     }
-    portout (checkcounter);
-    for (;;) {}
+    printf ("Failed test %d: Expected '%s' but received '%s'\n", checkcounter, expected, result);
 }
 
 // utility functions
@@ -115,9 +113,8 @@ void teststrings(void)
 void testsprintf(void)
 {
     char buffer[100];
-    strcpy(buffer, "dummy and very long string                  ");
+    strcpy(buffer, "undefined");
     sprintf(buffer,"f*");
-    puts(buffer);
     teststr(buffer, "f*");                                           // 12
     sprintf(buffer, "Best prime is %d.", 17);
     teststr(buffer, "Best prime is 17.");                            // 13
@@ -130,6 +127,8 @@ void testsprintf(void)
 
 int main(int argc, char** argv)
 {     
+    printf("Running test suite...\n");
+    
     // memory access tests
     test16bitoverboundaries();
     testarrayaccrossboundaries();
@@ -137,10 +136,9 @@ int main(int argc, char** argv)
     
     // simple standard libraries tests
     teststrings();
-//    testsprintf();
+    testsprintf();
 
-    // all passed, indicate success
-    portout(0);
+    printf ("Tests completed\n");
     return 0;
 }
 
