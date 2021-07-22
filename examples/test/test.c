@@ -1,11 +1,6 @@
-// Test suite to check correct behaviour of compilde code and
+// Test suite to check correct behaviour of compiled code and
 // standard libraries 
-// To have a minimum interface, when an error occurs in any of the
-// test, a test number is presented in binary on the output port.
-// When all tests pass, a 0 is set to the output port.
 
-
-#include <os816.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -32,22 +27,6 @@ void teststr(char* result, char* expected)
         if (result[i]=='\0') { return; }
     }
     printf ("Failed test %d: Expected '%s' but received '%s'\n", checkcounter, expected, result);
-}
-
-// utility functions
-void printhex(char* buffer)
-{
-    int i;
-    char bo[4];
-    for (i=0; i<10000; i++)
-    {
-        int c = buffer[i] & 0xff;
-        if (c=='\0') { putchar('\n'); return; }
-        send ('A' + (c>>4));
-        send ('A' + (c & 0xf));
-        send (' ');
-    }
-    send('\n');
 }
 
 
@@ -113,7 +92,6 @@ void teststrings(void)
 void testsprintf(void)
 {
     char buffer[100];
-    strcpy(buffer, "undefined");
     sprintf(buffer,"f*");
     teststr(buffer, "f*");                                           // 12
     sprintf(buffer, "Best prime is %d.", 17);

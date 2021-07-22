@@ -13,12 +13,17 @@
 int close(int fd) 
 {
     // TODO
+    send ( (int) '!');
+    send ( (int) '0');
+    send (fd+'0');
     return -1;
 }
 
 int creat(const char *name, int mode)
 {
     // TODO
+    send ( (int) '!');
+    send ( (int) '1');
     return -1;
 }
 
@@ -30,41 +35,55 @@ int isatty(int fd)
 long lseek(int fd, long offset, int whence)
 {
     // TODO
+    send ( (int) '!');
+    send ( (int) '2');
+    send (fd+'0');
     return -1;
 }
 
 int open(const char * name, int mode)
 {
     // TODO
+    send ( (int) '!');
+    send ( (int) '3');
     return -1;
 }
 
 size_t read(int fd, void * buffer, size_t len)
 {
-    size_t i;
-    if (len<1) { return 0; }
-    // tty input
-    for (i=0; i<len; i++)
-    {   
-        ((unsigned char *)buffer) [0] = (unsigned char) receive();
+    size_t i = 0;
+
+    if (fd==0) 
+    {
+        for (i=0; i<len; i++)
+        {   
+            ((unsigned char *)buffer) [0] = (unsigned char) receive();
+        }
     }
+
     return i;
 }
 
 int unlink(const char * name)
 {
-    // TODO
+    send ( (int) '!');
+    send ( (int) '4');
+   // TODO
     return -1;
 }
 
 
 size_t write(int fd, void * buffer, size_t len)
 {
-    size_t i;
-    // tty output
-    for (i=0; i<len; i++)
+    size_t i = 0;
+
+    if (fd==1) 
     {
-        send ( ((unsigned char *)buffer) [i] );
-    }    
-    return i;
+        for (i=0; i<len; i++)
+        {
+            send ( ((unsigned char *)buffer) [i] );
+        }    
+    }
+    
+    return i;    
 }

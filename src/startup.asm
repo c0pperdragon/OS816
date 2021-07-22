@@ -22,8 +22,9 @@ START:
     LONGI ON
     LONGA ON
 
-    ; set the stack to start on top of bank 0
-    LDA #$FFFF 
+    ; to work around a bug in sprintf start stack
+    ; 1K below end of bank
+    LDA #$FC00
     TCS 
 
     ; set D register to the bank of UDATA
