@@ -54,17 +54,29 @@ NOCLEAR:
     DEC A ;less one for MVN instruction
     LDX #<_ROM_BEG_DATA ;get source into X
     LDY #<_BEG_DATA ;get dest into Y
-    MVN #(^_ROM_BEG_DATA)+$80,#^_BEG_DATA ;copy bytes
+    MVN #^_ROM_BEG_DATA,#^_BEG_DATA ;copy bytes
 
     ; start the main function, and stop CPU upon return
-    LDA #0
-    PHA
-    PHA
-    PHA
+    PEA #^argv
+    PEA #<argv    
+    PEA #2
     JSL >~~main
     STP
     ENDS
 
+    KDATA
+progname:
+    DB 79,83,56,49,54,0  ; "OS816"
+gamename:
+    DB 90,79,82,75,0     ; "ZORK"
+argv:
+    DW #<progname
+    DW #^progname
+    DW #<gamename
+    DW #^gamename
+    DW 0
+    DW 0
+    ENDS    
     
     ; Very simple way to terminate the program
     xdef ~~_exit
@@ -88,21 +100,21 @@ NOCLEAR:
     ; This is a very tricky startup code that needs to work with both
     ; the original 65c816 as well as the Bernd emulator.
 RESET SECTION
-   ORG $FFF2
+   ORG $80FFF2
     ; The original CPU will come up in emulation mode which has a different
     ; memory map so it can access the ROM via bank 0. 
     ; In this case we must switch to a true ROM bank and turn off emulation.
-ORIGINAL65C816:           ; FFF2
+ORIGINAL65C816:           ; 80FFF2
     JMP >TOHIGHBANK  
-TOHIGHBANK:               ; FFF6
+TOHIGHBANK:               ; 80FFF6
     CLC 
     XCE                
     ; Bernd emulation will not use the reset vectors, but will directly jump to this
     ; location with emulation already turned off
-BERND:                    ; FFF8
+BERND:                    ; 80FFF8
     JMP >START
     ; The reset vector for the 65C816
-RESETVECTOR:              ; FFFC
+RESETVECTOR:              ; 80FFFC
     DW $FFF2
     ENDS
     

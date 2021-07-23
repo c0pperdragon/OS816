@@ -77,7 +77,7 @@ size_t write(int fd, void * buffer, size_t len)
 {
     size_t i = 0;
 
-    if (fd==1) 
+    if (fd==1 || fd==2) 
     {
         for (i=0; i<len; i++)
         {
