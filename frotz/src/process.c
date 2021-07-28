@@ -262,7 +262,7 @@ void interpret(void)
 		CODE_BYTE(opcode)
 #endif
 		zargc = 0;
-
+//printf ("PC: %04x,  opcode: %02x\n", (unsigned int)((long)pcp), opcode);
 		if (opcode < 0x80) {	/* 2OP opcodes */
 			load_operand((zbyte) (opcode & 0x40) ? 2 : 1);
 			load_operand((zbyte) (opcode & 0x20) ? 2 : 1);

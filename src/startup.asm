@@ -68,7 +68,7 @@ NOCLEAR:
 progname:
     DB 79,83,56,49,54,0  ; "OS816"
 gamename:
-    DB 90,79,82,75,0     ; "ZORK"
+    DB 71,65,77,69,0     ; "GAME"
 argv:
     DW #<progname
     DW #^progname
@@ -77,6 +77,21 @@ argv:
     DW 0
     DW 0
     ENDS    
+
+    
+    ; heap position when using the WDC library
+    ; for heap management
+;    XDEF ~~heap_start
+;    XDEF ~~heap_end
+    DATA
+~~heap_start:
+    DW #$0000
+    DW #$0001
+~~heap_end:
+    DW #$0000
+    DW #$0002
+    ENDS
+
     
     ; Very simple way to terminate the program
     xdef ~~_exit
@@ -84,18 +99,8 @@ argv:
 ~~_exit:
     STP
     ENDS
-    
-    
-    ; Define the vectors to the heap area
-    xdef ~~heap_end
-    xdef ~~heap_start
-    DATA
-~~heap_start:
-    DB $00,$00,$01,$00    
-~~heap_end:
-    DB $FF,$FF,$07,$00
-    ENDS
 
+    
         
     ; This is a very tricky startup code that needs to work with both
     ; the original 65c816 as well as the Bernd emulator.

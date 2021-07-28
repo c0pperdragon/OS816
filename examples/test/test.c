@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <malloc.h>
 
 // test functions that will halt the program in case of an error
 
@@ -100,13 +100,45 @@ void testsprintf(void)
     teststr(buffer, "The answer is 42, which is unexpected!");       // 14
 }
 
-// run suit of tests
+// memory allocation
 
+void printptr(void* ptr)
+{
+    long l = (long) ptr;
+    int hi = (int) (l>>16);
+    int lo = (int) l;
+    printf ("%04x%04x\n", hi,lo);
+}
+
+void testmalloc(void)
+{
+    void *a,*b,*c,*d,*e,*f;
+
+    a = malloc(1000);
+    printptr(a);
+    b = malloc(2000);
+    printptr(b);
+    c = malloc(1000);
+    printptr(c);
+    free(c);
+    d = malloc(2000);
+    printptr(d);
+    d = malloc(3000);
+    printptr(d);
+    e = malloc(20000);
+    printptr(e);    
+    f = malloc((unsigned int)60000);
+    printptr(f);    
+}
+
+
+// run suit of tests
 
 int main(int argc, char** argv)
 {     
-    printf("Running test suite...\n");
-    
+    // test memory allocation
+    testmalloc();
+
     // memory access tests
     test16bitoverboundaries();
     testarrayaccrossboundaries();
@@ -116,7 +148,9 @@ int main(int argc, char** argv)
     teststrings();
     testsprintf();
 
+    
     printf ("Tests completed\n");
     return 0;
+    
 }
 

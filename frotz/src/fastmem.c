@@ -550,9 +550,14 @@ void init_memory(void)
 	}
 
 	/* Allocate memory for story data */
-	if ((zmp = (zbyte huge *) zrealloc(zmp, story_size, 64)) == NULL)
-		os_fatal("Out of memory");
-
+    {
+        zbyte* h = zmp;
+        if ((zmp = (zbyte*) calloc((size_t)(story_size>>4), 16)) == NULL)
+            os_fatal("Out of memory");
+        memcpy (zmp, h, 64);
+        zfree(h);
+    }
+    
 #ifdef TOPS20
 	/* Load and sanitize story file one byte at a time. */
 	for (size = 64; size < story_size; size++) {

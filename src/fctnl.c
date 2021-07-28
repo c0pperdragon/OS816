@@ -1,6 +1,17 @@
 
 #include "os816.h"
 #include <fcntl.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+
+int fileisopen=0;
+long filestart;
+long filesize;    
+long filecursor;
+
+
 
 //void _abort(void)
 //{
@@ -12,10 +23,7 @@
 
 int close(int fd) 
 {
-    // TODO
-    send ( (int) '!');
-    send ( (int) '0');
-    send (fd+'0');
+    if (fd==3) { fileisopen=0; }
     return -1;
 }
 
@@ -29,39 +37,69 @@ int creat(const char *name, int mode)
 
 int isatty(int fd)
 {
-    return 1;
+    if (fd<=2) return 1;
+    return 0;
 }
 
 long lseek(int fd, long offset, int whence)
 {
-    // TODO
-    send ( (int) '!');
-    send ( (int) '2');
-    send (fd+'0');
+    if (fd==3 && fileisopen)
+    {
+        switch (whence)
+        {   case SEEK_SET: 
+                filecursor =  offset;
+                break;
+            case SEEK_CUR:
+                filecursor += offset;
+                break;            
+            case SEEK_END:
+                filecursor = filesize + offset;
+                break;
+            default: 
+                return -1;
+        }        
+        if (filecursor<0 || filecursor>=filesize)
+        {
+            filecursor = 0;
+            return -1;
+        }
+        return filecursor;
+    }
     return -1;
 }
 
 int open(const char * name, int mode)
 {
-    // TODO
-    send ( (int) '!');
-    send ( (int) '3');
-    return -1;
+    if (fileisopen) { return -1; }
+    filestart = 0x840004;
+    filesize = * ((long*)0x840000) ;
+    filecursor = 0;
+    fileisopen = 1;
+    return 3;
 }
 
 size_t read(int fd, void * buffer, size_t len)
 {
-    size_t i = 0;
+    size_t i;
 
+    if (len<1) { return 0; }
     if (fd==0) 
     {
-        for (i=0; i<len; i++)
-        {   
-            ((unsigned char *)buffer) [0] = (unsigned char) receive();
+        ((unsigned char *)buffer) [0] = (unsigned char) receive();
+        return 1;
+    }   
+    if (fd==3 && fileisopen)
+    {
+        if (filecursor+len > filesize)
+        {
+            len = filesize-filecursor;
         }
+        memcpy(buffer, (void*)(filestart+filecursor), len);
+        filecursor += len;
+        return len;        
     }
-
-    return i;
+    
+    return 0;
 }
 
 int unlink(const char * name)

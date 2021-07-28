@@ -10,3 +10,8 @@ int portin(void);
 
 void send(int data);
 int receive(void);
+
+void MVN(unsigned int destinationaddress, unsigned int destinationbank, 
+         unsigned int sourceaddress, unsigned int sourcebank,
+         unsigned int length_minus_one);
+         

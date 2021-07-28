@@ -1,9 +1,10 @@
 
 #include <stdio.h>
+#include <malloc.h>
 
 int main(int argc, char** argv)
 {
-    char buffer[200];
+    char* buffer = malloc(1000);
     for (;;)
     {
         printf("What is your name?\n"); 

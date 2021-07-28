@@ -61,8 +61,8 @@ typedef int bool;
 /******************************************************************************/
 #ifndef MSDOS_16BIT
 
-#include "../common/defs.h"
-#include "../common/hash.h"
+#include "defs.h"
+#include "hash.h"
 
 #define huge
 #define zmalloc(size)	malloc(size)
@@ -170,9 +170,9 @@ typedef struct {
 	zword true_back;
 } Zwindow;
 
-#include "../common/setup.h"
-#include "../common/missing.h"
-#include "../common/unused.h"
+#include "setup.h"
+#include "missing.h"
+#include "unused.h"
 
 /*** Constants that may be set at compile time ***/
 #ifndef MAX_UNDO_SLOTS
