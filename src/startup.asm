@@ -64,7 +64,7 @@ NOCLEAR:
     STP
     ENDS
 
-    KDATA
+    CODE
 progname:
     DB 79,83,56,49,54,0  ; "OS816"
 gamename:
@@ -81,8 +81,8 @@ argv:
     
     ; heap position when using the WDC library
     ; for heap management
-;    XDEF ~~heap_start
-;    XDEF ~~heap_end
+    XDEF ~~heap_start
+    XDEF ~~heap_end
     DATA
 ~~heap_start:
     DW #$0000

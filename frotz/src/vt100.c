@@ -29,7 +29,6 @@ void os_display_char(zchar c)
 { 
     switch (c)
     {
-
     	case ZC_RETURN:
             putchar ('\n');
             break;
@@ -56,10 +55,10 @@ void os_display_string(const zchar *s)
     { 
     	if (c == ZC_NEW_FONT || c == ZC_NEW_STYLE)
     	{
-	    if (s[i+1]!=0) { i++; };
-	}
-	else
-	{
+            if (s[i+1]!=0) { i++; };
+        }
+        else
+        {
             os_display_char(c); 
         }
     }
@@ -74,8 +73,7 @@ void os_more_prompt(void)
 
 void os_set_cursor(int row, int column) 
 { 
-//    putchar(' ');
-//    printf("<%d,%d>", row, column);
+    printf("\033[%d;%dH", row, column);
 }
 
 void os_scroll_area(int a, int b, int c, int d, int e) 
