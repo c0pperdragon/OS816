@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
-
+/*
 // test functions that will halt the program in case of an error
 
 int checkcounter=0;
@@ -131,11 +131,19 @@ void testmalloc(void)
     printptr(f);    
 }
 
-
+*/
 // run suit of tests
+
+#include <os816.h>
+#define SIZE 100
+unsigned char src[] = { 4,5,1,23,6,123,13,5,12,12,1,42,43,4,24,4,34,9,1,23,3,23 };
+unsigned char dst[SIZE];
 
 int main(int argc, char** argv)
 {     
+    burstmemcpy (dst,src,SIZE); 
+    return 0;
+/*
     // test memory allocation
     testmalloc();
 
@@ -151,6 +159,6 @@ int main(int argc, char** argv)
     
     printf ("Tests completed\n");
     return 0;
-    
+*/    
 }
 

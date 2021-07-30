@@ -4,13 +4,8 @@
 #include "frotz.h"
 
 char* storyfilename = "";
+int currentstyle;
 
-
-
-void os_process_arguments(int argc, char *argv[]) 
-{
-    storyfilename=argc>1 ? argv[1] : "unknown"; 
-}
 
 void os_init_screen(void) 
 {
@@ -24,6 +19,11 @@ void os_init_screen(void)
     z_header.font_height = 1;
 };
 
+void os_reset_screen(void) 
+{ 
+    currentstyle = NORMAL_STYLE;
+    printf ("\033[0m");
+}
 
 void os_display_char(zchar c) 
 { 
@@ -47,15 +47,58 @@ void os_display_char(zchar c)
     }      
 }
 
+void os_set_text_style(int s) 
+{ 
+    int on = s & ~currentstyle;
+    int off = currentstyle & ~s;
+    currentstyle = s;
+    //printf ("<%d>",s);
+    
+    if (on & REVERSE_STYLE)
+    {
+        printf ("\033[7m");
+    }
+    if (off & REVERSE_STYLE)
+    {
+        printf ("\033[0m");
+    }
+} 
+
+void os_set_cursor(int row, int column) 
+{ 
+//    printf("<%d,%d>", row, column);
+    printf("\033[%d;%dH", row, column);
+}
+
+void os_scroll_area(int row, int column, int height, int width, int upwards) 
+{
+//   printf("[%d,%d,%d,%d,%d]", a,b,c,d,e);
+    if (row==2 && column==1 && height==24 && width==80)
+    {
+        int i;
+        os_set_cursor(80,24);
+        for (i=0; i<upwards; i++) { putchar('\n'); }
+    }   
+}
+ 
+
 void os_display_string(const zchar *s) 
 { 
     int i; 
     zchar c;
     for(i=0; (c=s[i])!=0; i++) 
     { 
-    	if (c == ZC_NEW_FONT || c == ZC_NEW_STYLE)
-    	{
+        if (c == ZC_NEW_FONT) 
+        {
             if (s[i+1]!=0) { i++; };
+        }    
+    	else if (c == ZC_NEW_STYLE)
+    	{
+            if (s[i+1]!=0) 
+            {
+                os_set_text_style(s[i+1]);
+                i++; 
+            };
         }
         else
         {
@@ -64,23 +107,46 @@ void os_display_string(const zchar *s)
     }
 }
 
+
+zchar os_read_key(int timeout, int showcursor) 
+{ 
+    return getchar(); 
+}
+
 void os_more_prompt(void) 
 {
     zchar buf[10];
     printf("<MORE>");
-    os_read_line(10, buf, 0,0,0); 
+    os_read_key(0,0);
 }
 
-void os_set_cursor(int row, int column) 
-{ 
-    printf("\033[%d;%dH", row, column);
+zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
+{  
+    int l = 0;
+    zchar c;
+    
+    os_set_text_style(NORMAL_STYLE);
+    
+    for (;;)
+    {
+    	c = os_read_key(0,0);
+    	if (c=='\n') 
+    	{ 
+    	    buf[l] = 0; 
+    	    return ZC_RETURN; 
+    	}
+    	if (c=='\b')
+    	{
+    	    if (l>0) { l--; }	
+	}
+	else if (l+1<max && c>=32 && c<=255) 
+	{
+	    buf[l] = c;
+	    l++;
+	}
+    }
 }
 
-void os_scroll_area(int a, int b, int c, int d, int e) 
-{
-    putchar('\n');
-//    printf("<%d,%d,%d,%d,%d>", a,b,c,d,e);
-}
 
 
 
@@ -107,43 +173,15 @@ char *os_read_file_name(const char *prompt, int i)
 }
 
 
-zchar os_read_key(int timeout, int showcursor) 
-{ 
-    return getchar(); 
-}
-
-zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
-{  
-    int l = 0;
-    zchar c;
-    for (;;)
-    {
-    	c = getchar();
-    	if (c=='\n') 
-    	{ 
-    	    buf[l] = 0; 
-    	    return ZC_RETURN; 
-    	}
-    	if (c=='\b')
-    	{
-    	    if (l>0) { l--; }	
-	}
-	else if (l+1<max && c>=32 && c<=255) 
-	{
-	    buf[l] = c;
-	    l++;
-	}
-    }
-}
-
-void os_reset_screen(void) 
-{ 
-    printf ("n\n\n");
-}
 
 void os_restart_game(int code) 
 {
-    printf ("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    os_reset_screen();
+}
+
+void os_process_arguments(int argc, char *argv[]) 
+{
+    storyfilename=argc>1 ? argv[1] : "unknown"; 
 }
 
 FILE *os_load_story(void) 
@@ -171,10 +209,10 @@ int os_string_width(const zchar *s)
     { 
     	if (c == ZC_NEW_FONT || c == ZC_NEW_STYLE)
     	{
-	    if (s[i+1]!=0) { i++; };
-	}
-	else if (c>=32)
-	{
+            if (s[i+1]!=0) { i++; };
+        }
+        else if (c>=32)
+        {
            w++; 
         }
     }
@@ -211,7 +249,6 @@ void os_init_setup(void) {}
 void os_set_colour(int a, int b) { }
 int os_from_true_colour(zword c) { return 0; } 
 void os_set_font(int font) { } 
-void os_set_text_style(int s) { } 
 void os_start_sample(int a, int b, int c, zword d) {}
 void os_stop_sample(int a) {}
 int os_random_seed(void) { return 214; }  // looks random to me

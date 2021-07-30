@@ -7,7 +7,8 @@ WDC816AS serial.asm
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP portio.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP fctnl.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP time.c
-WDCLIB -A ..\bin\os816.lib sleep.obj serial.obj portio.obj fctnl.obj time.obj
+WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP burstmemcpy.c
+WDCLIB -A ..\bin\os816.lib sleep.obj serial.obj portio.obj fctnl.obj time.obj burstmemcpy.obj
 
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP malloc.c
 WDCLIB -A ..\bin\malloc.lib malloc.obj

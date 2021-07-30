@@ -12,27 +12,6 @@ long filesize;
 long filecursor;
 
 
-void simplecopy(void* destination, void* source, size_t length)
-{
-#asm
-    LDX %%length
-    BEQ simplecopydone
-    LDY #0
-    SEP #$20
-    longa off    
-simplecopyloop:    
-    LDA [%%source],Y
-    STA [%%destination],Y
-    INY
-    DEX
-    BNE simplecopyloop
-    REP #$20
-    longa on
-simplecopydone:    
-#endasm
-}
-
-
 //void _abort(void)
 //{
 //}
@@ -114,7 +93,7 @@ size_t read(int fd, void * buffer, size_t len)
         {
             len = filesize-filecursor;
         }
-        simplecopy(buffer, (void*)(filestart+filecursor), len);
+        burstmemcpy(buffer, (void*)(filestart+filecursor), len);
         filecursor += len;
         return len;        
     }
