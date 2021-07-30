@@ -118,7 +118,7 @@ void os_more_prompt(void)
     zchar buf[10];
     printf("<MORE>");
     os_read_key(0,0);
-    printf("\n");
+    printf("\b\b\b\b\b\b      \b\b\b\b\b\b");
 }
 
 zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
@@ -191,7 +191,7 @@ void os_process_arguments(int argc, char *argv[])
 
 FILE *os_load_story(void) 
 {
-    printf ("Loading story file...\n");
+    printf ("Loading story file '%s'...\n",storyfilename);
     return fopen(storyfilename, "rb"); 
 };
 

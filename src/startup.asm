@@ -68,7 +68,7 @@ NOCLEAR:
 progname:
     DB 79,83,56,49,54,0  ; "OS816"
 gamename:
-    DB 71,65,77,69,0     ; "GAME"
+    DB 100,101,102,97,117,108,116,0     ; "default"
 argv:
     DW #<progname
     DW #^progname
