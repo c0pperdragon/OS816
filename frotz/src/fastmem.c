@@ -552,7 +552,7 @@ void init_memory(void)
 	/* Allocate memory for story data */
     {
         zbyte* h = zmp;
-        if ((zmp = (zbyte*) calloc((size_t)(story_size>>4), 16)) == NULL)
+        if ((zmp = (zbyte*) calloc((size_t)((story_size+15)>>4), 16)) == NULL)
             os_fatal("Out of memory");
         memcpy (zmp, h, 64);
         zfree(h);

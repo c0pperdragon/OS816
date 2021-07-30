@@ -118,6 +118,7 @@ void os_more_prompt(void)
     zchar buf[10];
     printf("<MORE>");
     os_read_key(0,0);
+    printf("\n");
 }
 
 zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
@@ -130,24 +131,28 @@ zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued)
     for (;;)
     {
     	c = os_read_key(0,0);
-    	if (c=='\n') 
-    	{ 
-    	    buf[l] = 0; 
-    	    return ZC_RETURN; 
-    	}
-    	if (c=='\b')
-    	{
-    	    if (l>0) { l--; }	
-	}
-	else if (l+1<max && c>=32 && c<=255) 
-	{
-	    buf[l] = c;
-	    l++;
-	}
+        if (c=='\n')
+        {            
+            buf[l] = 0; 
+            return ZC_RETURN; 
+        }
+        else if (c=='\b')
+        {
+            if (l>0) 
+            { 
+                l--; 
+                printf("\b \b");
+            }	
+        }
+        else if (l+1<max && c>=32 && c<=255) 
+        {
+            buf[l] = c;
+            l++;
+            putchar (c);
+
+        }
     }
 }
-
-
 
 
 void os_fatal(const char *format, ...) 

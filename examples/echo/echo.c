@@ -8,7 +8,7 @@ int main(int argc, char** argv)
     for (;;)
     {
         printf("What is your name?\n"); 
-        gets(buffer);   // DANGER! prone to buffer overrun
-        printf("Hi, '%s'!\n", buffer);
+        scanf("%s",buffer);   // DANGER! prone to buffer overrun
+        printf("Hi, '%s' (%d letters)!\n", buffer, strlen(buffer));
     }
 }
