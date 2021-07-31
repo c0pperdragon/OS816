@@ -9,9 +9,7 @@ WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP fcntl.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP time.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP utils.c
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP romfile.c
-WDCLIB -A ..\bin\os816.lib sleep.obj serial.obj portio.obj fcntl.obj time.obj utils.obj romfile.obj
-
 WDC816CC -ML -MV -MU -MK -MT -SOP -WL -WP malloc.c
-WDCLIB -A ..\bin\malloc.lib malloc.obj
+WDCLIB -A ..\bin\os816.lib sleep.obj serial.obj portio.obj fcntl.obj time.obj utils.obj romfile.obj malloc.obj
 
 del *.obj

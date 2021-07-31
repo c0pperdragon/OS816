@@ -2,6 +2,7 @@
 #include "os816.h"
 #include "romfile.h"
 #include <stdio.h>
+#include <string.h>
 
 typedef struct {
     unsigned long filestart;
@@ -50,12 +51,14 @@ int romfile_openread(const char * name)
     }
 }
 
-void romfile_closeread(int romfd) 
+int romfile_closeread(int romfd) 
 {
     if (romfd>=0 && romfd<CONCURRENTFILES) 
     {
         romfiles[romfd].isopen = 0;
+        return 0;
     }
+    return -1;
 }
 
 unsigned int romfile_read(int romfd, void * buffer, unsigned int len)
@@ -73,7 +76,7 @@ unsigned int romfile_read(int romfd, void * buffer, unsigned int len)
         len = f->filesize - f->filecursor;
     }
     
-    burstmemcpy(buffer, (void*)(f->filestart+f->filecursor), len);
+    memcpy(buffer, (void*)(f->filestart+f->filecursor), len);
     f->filecursor += len;
     return len;        
 }
@@ -114,9 +117,10 @@ int romfile_openwrite(const char * name)
     return 0; // return -1;
 }
 
-void romfile_closewrite(int writefd) 
+int romfile_closewrite(int writefd) 
 {
     // not implemented
+    return 0;
 }
 
 unsigned int romfile_write(int writefd, void * buffer, unsigned int len)

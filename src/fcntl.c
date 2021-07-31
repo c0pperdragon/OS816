@@ -12,21 +12,21 @@
 // 0 .. stdin
 // 1 .. stdout
 // 2 .. stderr
-// 0x10 - 0x1F descriptors for reading romfiles
-// 0x20 - 0x1F descriptors for writing romfiles
+// 0x04 - 0x07 descriptors for reading romfiles
+// 0x08 - 0x0B descriptors for writing romfiles
 
 
 int close(int fd) 
 {
-    if ((fd&0xF0)==0x10)    // reading descriptor
+    if ((fd&0x0C)==0x04)    // reading descriptor
     {
-        romfile_closeread(fd&0x0F);
+        return romfile_closeread(fd&0x03);
     }        
-    if ((fd&0xF0)==0x20)    // writing descriptor
+    if ((fd&0x0C)==0x08)    // writing descriptor
     {
-        romfile_closewrite(fd&0x0F);
+        return romfile_closewrite(fd&0x03);
     }        
-    return -1;  // dont care for this return value
+    return -1; 
 }
 
 int creat(const char *name, int mode)
@@ -42,24 +42,26 @@ int isatty(int fd)
 long lseek(int fd, long offset, int whence)
 {
     // only supported when reading romfiles
-    if ((fd&0xF0)==0x10) 
+    if ((fd&0x0C)==0x04) 
     {
-        return romfile_lseek(fd&0x0F, offset, whence);
+        return romfile_lseek(fd&0x03, offset, whence);
     }        
     return -1;
 }
 
 int open(const char * name, int mode)
 {    
-    if (mode==O_RDONLY)
+    if (mode&O_APPEND) { return -1; } // append not supported
+    
+    if ((mode&0x000F)==O_RDONLY)
     {
         int rdfd = romfile_openread(name);
-        if (rdfd>=0) { return rdfd | 0x10; }
+        if (rdfd>=0) { return rdfd | 0x04; }
     }
-    if (mode==O_WRONLY)
+    if ((mode&0x000F)==O_WRONLY)
     {
         int wrfd = romfile_openwrite(name);
-        if (wrfd>=0) { return wrfd | 0x20; }
+        if (wrfd>=0) { return wrfd | 0x08; }
     }
     return -1;
 }
@@ -73,9 +75,9 @@ size_t read(int fd, void * buffer, size_t len)
         ((unsigned char *)buffer) [0] = (unsigned char) receive();
         return 1;
     }   
-    if ((fd&0xF0)==0x10)    // romfile read
+    if ((fd&0x0C)==0x04)    // romfile read
     {
-        return romfile_read(fd&0x0F, buffer, len);
+        return romfile_read(fd&0x03, buffer, len);
     }        
     return 0;
 }
@@ -96,9 +98,9 @@ size_t write(int fd, void * buffer, size_t len)
         }
         return len;        
     }
-    if ((fd&0xF0)==0x20)    // romfile write
+    if ((fd&0x0C)==0x08)    // romfile write
     {
-        return romfile_write(fd&0x0F, buffer, len);
+        return romfile_write(fd&0x03, buffer, len);
     }            
     return 0;
 }

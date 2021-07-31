@@ -82,22 +82,29 @@ void testlongarrayindex(void)
 void teststrings(void)
 {
     char buffer[100];
+    char *a;
     strcpy(buffer, "Hi folks");
     teststr(buffer, "Hi folks");              // 8
     test(strcmp(buffer, "Hi folks"), 0);      // 9
     test(strcmp(buffer, "And lower"), 1);     // 10
     test(strcmp(buffer, "Much higher"), -1);  // 11
+
+    a = strdup(buffer);
+    test(strcmp(a, buffer), 0);               // 12
+    buffer[0] = 'W';
+    test(strcmp(a, buffer), -1);              // 13
+    free(a);
 }
 
 void testsprintf(void)
 {
     char buffer[100];
     sprintf(buffer,"f*");
-    teststr(buffer, "f*");                                           // 12
+    teststr(buffer, "f*");                                           // 14
     sprintf(buffer, "Best prime is %d.", 17);
-    teststr(buffer, "Best prime is 17.");                            // 13
+    teststr(buffer, "Best prime is 17.");                            // 15
     sprintf(buffer, "The answer is %d, which is %s!", 42,"unexpected");
-    teststr(buffer, "The answer is 42, which is unexpected!");       // 14
+    teststr(buffer, "The answer is 42, which is unexpected!");       // 16
 }
 
 // memory allocation

@@ -14,6 +14,7 @@ int portin(void);
 // Communication via the serial interface (with hardware handshake)
 void send(int data);
 int receive(void);
+void sendstr(const char* str);
 
 // Compare strings and calculate length if identical.
 // If not identical returns -1

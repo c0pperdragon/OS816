@@ -17,6 +17,7 @@ void *longalloc(unsigned long _size)
 void *calloc(size_t _nmemb, size_t _size)
 {
     unsigned long total = 0;
+//sendstr("calloc\n");
     // multiply by adding
     if (_nmemb < _size)
     {
@@ -34,18 +35,20 @@ void *calloc(size_t _nmemb, size_t _size)
 
 void *malloc(size_t _size)
 {
+//sendstr("malloc\n");
     return longalloc( (unsigned long) _size);
 }
 
 void free(void *_ptr)
 {
     // NOT SUPPORTED YET
+//sendstr("free\n");
 }
 
 void *realloc(void *_ptr, size_t _size)
 {
     // NOT SUPPORTED YET
+//sendstr("realloc\n");
     return 0;
 }
-
 

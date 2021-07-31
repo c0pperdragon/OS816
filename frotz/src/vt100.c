@@ -172,11 +172,13 @@ int os_font_data(int font, int *height, int *width)
 }
 
 
-char *os_read_file_name(const char *prompt, int i) 
+char *os_read_file_name (const char *default_name, int flag)
 {
-    return storyfilename; 
+    char x[100];    
+    strcpy (x,"story.sav");
+    printf("FILENAME: '%s'\n", x);
+    return strdup(x); 
 }
-
 
 
 void os_restart_game(int code) 

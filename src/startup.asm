@@ -6,7 +6,17 @@
     XREF _BEG_UDATA
     XREF _END_UDATA
     XREF ~~main
-    
+
+    ; force loading of library functions that will be used by 
+    ; standard c library later one (linker can not go back later)
+    XREF ~~open
+    XREF ~~close
+    XREF ~~read
+    XREF ~~write
+    XREF ~~isatty
+    XREF ~~lseek
+    XREF ~~unlink
+
     
     CODE
 START:
@@ -79,19 +89,6 @@ argv:
     ENDS    
 
     
-    ; heap position when using the WDC library
-    ; for heap management
-    XDEF ~~heap_start
-    XDEF ~~heap_end
-    DATA
-~~heap_start:
-    DW #$0000
-    DW #$0001
-~~heap_end:
-    DW #$0000
-    DW #$0002
-    ENDS
-
     
     ; Very simple way to terminate the program
     xdef ~~_exit
@@ -121,7 +118,11 @@ BERND:                    ; 80FFF8
     ; The reset vector for the 65C816
 RESETVECTOR:              ; 80FFFC
     DW $FFF2
+    
+    ; use this tiny free space to force the linker to load stuff
+    DW    ~~open+~~close+~~read+~~write+~~isatty+~~lseek+~~unlink    
     ENDS
     
-
+    
     END
+    
