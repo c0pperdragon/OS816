@@ -1,5 +1,18 @@
 #include <os816.h>
 
+
+int strcmplen(const char* a, const char* b)
+{
+    int i;
+    for (i=0; i<32767; i++)
+    {
+        if (a[i]!=b[i]) { return -1; };
+        if (a[i]==0) { return i; }
+    }
+    return -1;
+}
+
+
 // MVN instruction constructed in RAM
 unsigned char mvn[4] =
 {

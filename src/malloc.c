@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <os816.h>
+#include "os816.h"
 
 unsigned long heapcursor = 0x010000;
 unsigned long heapend    = 0x080000;

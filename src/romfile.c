@@ -1,7 +1,6 @@
 
 #include "os816.h"
-#include <string.h>
-#include <fcntl.h>
+#include "romfile.h"
 #include <stdio.h>
 
 typedef struct {
@@ -15,31 +14,21 @@ typedef struct {
 #define CONCURRENTFILES 4
 RomFile romfiles[CONCURRENTFILES];
 
-int filenameidentical(const char* a, const char* b)
-{
-    int i;
-    for (i=0; i<100; i++)
-    {
-        if (a[i]!=b[i]) { return 0; };
-        if (a[i]==0) { return 1; }
-    }
-    return 0;
-}
-
-
-int romfile_open(const char * name)
+int romfile_openread(const char * name)
 {
     unsigned long* img = (unsigned long*) 0x00810000;   // hardcoded location of rom images
-    unsigned long imagelength;
-    int i;
     
     // try to find the rom image
     for (;;)
     {
+        unsigned long imagelength;
+        int namelength;
+        int i;
+        
         if (*img != 0x454C4946) { return -1; }  // magic code "FILE"
         imagelength = *(img+1);   // total size in bytes
         
-        if (!filenameidentical((char*) (img+2), name))   // check for correct name
+        if ( (namelength = strcmplen((char*) (img+2), name)) < 0)   // check for correct name
         {
             img = (unsigned long*) ( ((long int) img) + imagelength);  // skip current image
             continue;
@@ -48,12 +37,11 @@ int romfile_open(const char * name)
         // found the correct image, now need to find a free file descriptor
         for (i=0; i<CONCURRENTFILES; i++)
         {
-            int namelen = strlen((char*) (img+2));
             RomFile* f = &(romfiles[i]);
             if (f->isopen) { continue; }
             // yes, found a descriptor, set up for operation
-            f->filestart = ((unsigned long) img) + 9 + namelen; 
-            f->filesize = imagelength - 9 - namelen;
+            f->filestart = ((unsigned long) img) + 9 + namelength; 
+            f->filesize = imagelength - 9 - namelength;
             f->filecursor = 0;
             f->isopen = 1;
             return i;
@@ -62,7 +50,7 @@ int romfile_open(const char * name)
     }
 }
 
-void romfile_close(int romfd) 
+void romfile_closeread(int romfd) 
 {
     if (romfd>=0 && romfd<CONCURRENTFILES) 
     {
@@ -95,27 +83,51 @@ long romfile_lseek(int romfd, long offset, int whence)
     if (romfd>=0 && romfd<CONCURRENTFILES) 
     {
         RomFile* f = &(romfiles[romfd]);
+        long newcursor;
+        
         if (!f->isopen) { return -1; }
 
         switch (whence)
         {   case SEEK_SET: 
-                f->filecursor =  offset;
+                newcursor =  offset;
                 break;
             case SEEK_CUR:
-                f->filecursor += offset;
+                newcursor += f->filecursor + offset;
                 break;            
             case SEEK_END:
-                f->filecursor = f->filesize + offset;
+                newcursor = f->filesize + offset;
                 break;
             default: 
                 return -1;
         }        
-        if (f->filecursor<0 || f->filecursor>=f->filesize)
-        {
-            f->filecursor = 0;
-            return -1;
-        }
-        return f->filecursor;
+        if (newcursor<0 || newcursor>f->filesize){ return -1; }
+        f->filecursor = newcursor;
+        return newcursor;
     }
     return -1;
 }
+
+
+int romfile_openwrite(const char * name)
+{
+    // not implemented
+    return 0; // return -1;
+}
+
+void romfile_closewrite(int writefd) 
+{
+    // not implemented
+}
+
+unsigned int romfile_write(int writefd, void * buffer, unsigned int len)
+{
+    // not implemented
+    return len;   
+}
+
+int romfile_delete(const char* name)
+{
+    // not implemented
+    return -1; 
+}
+
