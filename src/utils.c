@@ -1,6 +1,7 @@
 #include <os816.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 // Replace broken implementation in the WDC library
@@ -31,6 +32,13 @@ unsigned char mvn[4] =
 
 void *memcpy(void* destination, const void* source, unsigned int len)
 {
+//    char buffer[100];
+//    sprintf(buffer, "MEMCPY %04x%04x %04x%04x %u\n", 
+//        (unsigned)(((unsigned long)destination)>>16), (unsigned)((unsigned long)destination),
+//        (unsigned)(((unsigned long)source)>>16), (unsigned)((unsigned long)source),
+//        len);
+//    sendstr(buffer);
+ 
     // if nothing to copy, just pass
     if (len==0)
     {
@@ -99,7 +107,6 @@ void *memcpy(void* destination, const void* source, unsigned int len)
     }
     return destination;
 }
-
 
 
 int strcmplen(const char* a, const char* b)

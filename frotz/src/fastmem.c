@@ -272,7 +272,6 @@ void init_setup(void)
 	f_setup.restricted_path = NULL;
 }
 
-
 /*
  * init_memory
  *
@@ -570,12 +569,13 @@ void init_memory(void)
 	/* Load story file in chunks of 32KB */
 	n = 0x8000;
 	for (size = 64; size < story_size; size += n) {
-		if (story_size - size < 0x8000)
+		if (story_size - size < n)
 			n = (unsigned) (story_size - size);
 		SET_PC(size);
+        
 		if (fread(pcp, 1, n, story_fp) != n)
 			os_fatal("Story file read error");
-	}
+    }
 #endif
 
 	/* Read header extension table */

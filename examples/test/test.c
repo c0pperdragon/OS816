@@ -119,24 +119,27 @@ void printptr(void* ptr)
 
 void testmalloc(void)
 {
-    void *a,*b,*c,*d,*e,*f;
+    void *a,*b,*c,*d,*e,*f,*g;
 
     a = malloc(1000);
     printptr(a);
     b = malloc(2000);
     printptr(b);
-    c = malloc(1000);
+    c = calloc(1000,200);
     printptr(c);
-    free(c);
     d = malloc(2000);
     printptr(d);
-    d = malloc(3000);
-    printptr(d);
-    e = malloc(20000);
-    printptr(e);    
-    f = malloc((unsigned int)60000);
+    e = malloc(3000);
+    printptr(e);
+    free(b);
+    free(d);
+    free(c);
+    f = malloc(20000);
     printptr(f);    
+    g = malloc((unsigned int)60000);
+    printptr(g);    
 }
+
 
 // run suit of tests
 int main(int argc, char** argv)
