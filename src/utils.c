@@ -23,15 +23,27 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     size_t i,j;
     int b;
-
-    for (i=0; i<nmemb; i++)
+    unsigned char* p = (unsigned char*) ptr;
+    if (size==1)
     {
-        for (j=0; j<size; j++) 
+        for (i=0; i<nmemb; i++)
         {
-            b = fgetc(stream);
+            b = getc(stream);
             if (b<0) { return i; }  // EOF encountered
-            *((unsigned long*)ptr) = (unsigned char) b;
-            ptr = (void*) (((unsigned long) ptr) + 1); // proper 32-bit increment
+            p[i] = b;
+        }
+    }
+    else    
+    {
+        for (i=0; i<nmemb; i++)
+        {
+            for (j=0; j<size; j++) 
+            {
+                b = getc(stream);
+                if (b<0) { return i; }  // EOF encountered
+                *((unsigned long*)ptr) = (unsigned char) b;
+                p = (unsigned char*) (((unsigned long) p) + 1); // proper 32-bit increment
+            }
         }
     }
     return nmemb;
