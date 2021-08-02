@@ -17,6 +17,25 @@ char* strdup(char* s)
     return m;
 }    
 
+// Replaement for broken fread of the WDC library which does not 
+// handle bank boundaries correcty.
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+    size_t i,j;
+    int b;
+
+    for (i=0; i<nmemb; i++)
+    {
+        for (j=0; j<size; j++) 
+        {
+            b = fgetc(stream);
+            if (b<0) { return i; }  // EOF encountered
+            *((unsigned long*)ptr) = (unsigned char) b;
+            ptr = (void*) (((unsigned long) ptr) + 1); // proper 32-bit increment
+        }
+    }
+    return nmemb;
+}
 
 // Replace standard memcpy with an optimized version that
 // can make use of the MVN instruction

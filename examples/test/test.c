@@ -140,6 +140,17 @@ void testmalloc(void)
     printptr(g);    
 }
 
+void testfileinput(void)
+{
+    FILE* f = fopen("x","rb");
+    char buffer[11];
+    int len = fread(buffer, 1,10, f);
+    test(len, 2);
+    buffer[len]='\0';
+    teststr(buffer, "ab");
+    fclose(f);
+}
+    
 
 // run suit of tests
 int main(int argc, char** argv)
@@ -156,7 +167,9 @@ int main(int argc, char** argv)
     teststrings();
     testsprintf();
 
-    
+    // test file input
+    testfileinput();
+
     printf ("Tests completed\n");
     return 0;
 }

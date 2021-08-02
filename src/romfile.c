@@ -6,7 +6,7 @@
 
 typedef struct {
     unsigned long filestart;
-    unsigned long filesize;
+    unsigned long fileend;
     unsigned long filecursor;
     unsigned char isopen;
     unsigned char dummy,dummy2,dummy3;
@@ -17,7 +17,7 @@ RomFile romfiles[CONCURRENTFILES];
 
 int romfile_openread(const char * name)
 {
-    unsigned long* img = (unsigned long*) 0x00810000;   // hardcoded location of rom images
+    unsigned long img = 0x00810000;   // hardcoded location of rom images
     
     // try to find the rom image
     for (;;)
@@ -26,12 +26,12 @@ int romfile_openread(const char * name)
         int namelength;
         int i;
         
-        if (*img != 0x454C4946) { return -1; }  // magic code "FILE"
-        imagelength = *(img+1);   // total size in bytes
+        if (*((unsigned long*)img) != 0x454C4946) { return -1; }  // magic code "FILE"
+        imagelength = *((unsigned long*)(img+4));   // total size in bytes
         
-        if ( (namelength = strcmplen((char*) (img+2), name)) < 0)   // check for correct name
+        if ( (namelength = strcmplen((char*) (img+8), name)) < 0)   // check for correct name
         {
-            img = (unsigned long*) ( ((long int) img) + imagelength);  // skip current image
+            img += imagelength;  // skip current image
             continue;
         }
 
@@ -41,9 +41,9 @@ int romfile_openread(const char * name)
             RomFile* f = &(romfiles[i]);
             if (f->isopen) { continue; }
             // yes, found a descriptor, set up for operation
-            f->filestart = ((unsigned long) img) + 9 + namelength; 
-            f->filesize = imagelength - 9 - namelength;
-            f->filecursor = 0;
+            f->filestart = img + 9 + namelength;
+            f->fileend = f->filestart + imagelength;
+            f->filecursor = f->filestart; 
             f->isopen = 1;
             return i;
         }    
@@ -71,12 +71,12 @@ unsigned int romfile_read(int romfd, void * buffer, unsigned int len)
     f = &(romfiles[romfd]);
     if (!f->isopen) { return 0; };
 
-    if (f->filecursor+len > f->filesize)
+    if (f->filecursor+len > f->fileend)
     {
-        len = f->filesize - f->filecursor;
+        len = (unsigned int) (f->fileend - f->filecursor);
     }
     
-    memcpy(buffer, (void*)(f->filestart+f->filecursor), len);
+    memcpy(buffer, (void*)(f->filecursor), len);
     f->filecursor += len;
     return len;        
 }
@@ -92,18 +92,18 @@ long romfile_lseek(int romfd, long offset, int whence)
 
         switch (whence)
         {   case SEEK_SET: 
-                newcursor =  offset;
+                newcursor =  f->filestart+offset;
                 break;
             case SEEK_CUR:
                 newcursor += f->filecursor + offset;
                 break;            
             case SEEK_END:
-                newcursor = f->filesize + offset;
+                newcursor = f->fileend + offset;
                 break;
             default: 
                 return -1;
         }        
-        if (newcursor<0 || newcursor>f->filesize){ return -1; }
+        if (newcursor<f->filestart || newcursor>f->fileend){ return -1; }
         f->filecursor = newcursor;
         return newcursor;
     }
