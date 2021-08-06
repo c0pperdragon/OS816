@@ -7,6 +7,36 @@ char* storyfilename = "";
 int currentstyle;
 
 
+void read_line_with_echo(char* buffer, int bsize)
+{
+    int l = 0;
+    int c;
+    for (;;)
+    {
+    	c = getchar();
+        if (c=='\n')
+        {            
+            buffer[l] = 0; 
+            return; 
+        }
+        else if (c=='\b')
+        {
+            if (l>0) 
+            { 
+                l--; 
+                printf("\b\033[0K");
+            }	
+        }
+        else if (l+1<bsize && c>=32 && c<=255) 
+        {
+            buffer[l] = c;
+            l++;
+            putchar (c);
+        }
+    }
+}
+
+
 void os_init_screen(void) 
 {
     z_header.screen_rows = 24;
@@ -118,42 +148,15 @@ void os_more_prompt(void)
     zchar buf[10];
     printf("<MORE>");
     os_read_key(0,0);
-    printf("\b\b\b\b\b\b      \b\b\b\b\b\b");
+    printf("\b\b\b\b\b\b\033[0K");
 }
 
 zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
 {  
-    int l = 0;
-    zchar c;
-    
     os_set_text_style(NORMAL_STYLE);
-    
-    for (;;)
-    {
-    	c = os_read_key(0,0);
-        if (c=='\n')
-        {            
-            buf[l] = 0; 
-            return ZC_RETURN; 
-        }
-        else if (c=='\b')
-        {
-            if (l>0) 
-            { 
-                l--; 
-                printf("\b \b");
-            }	
-        }
-        else if (l+1<max && c>=32 && c<=255) 
-        {
-            buf[l] = c;
-            l++;
-            putchar (c);
-
-        }
-    }
+    read_line_with_echo(buf,max);
+    return ZC_RETURN; 
 }
-
 
 void os_fatal(const char *format, ...) 
 { 
@@ -188,7 +191,18 @@ void os_restart_game(int code)
 
 void os_process_arguments(int argc, char *argv[]) 
 {
-    storyfilename=argc>1 ? argv[1] : "unknown"; 
+    char buffer[50];
+    if (argc>1) 
+    {
+        storyfilename=argv[1]; 
+    }
+    else
+    {
+        printf("Which story do you want to load? ");
+        read_line_with_echo(buffer,50);
+        putchar('\n');
+        storyfilename=strdup(buffer);
+    }
 }
 
 FILE *os_load_story(void) 

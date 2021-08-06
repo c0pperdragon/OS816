@@ -17,7 +17,7 @@ RomFile romfiles[CONCURRENTFILES];
 
 int romfile_openread(const char * name)
 {
-    unsigned long img = 0x00810000;   // hardcoded location of rom images
+    unsigned long img = 0x810000;   
     
     // try to find the rom image
     for (;;)

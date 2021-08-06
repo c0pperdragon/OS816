@@ -69,7 +69,7 @@ NOCLEAR:
     ; start the main function, and stop CPU upon return
     PEA #^argv
     PEA #<argv    
-    PEA #2
+    PEA #1
     JSL >~~main
     STP
     ENDS
@@ -77,18 +77,14 @@ NOCLEAR:
     CODE
 progname:
     DB 79,83,56,49,54,0  ; "OS816"
-gamename:
-    DB 100,101,102,97,117,108,116,0     ; "default"
-argv:
+
+    argv:
     DW #<progname
     DW #^progname
-    DW #<gamename
-    DW #^gamename
     DW 0
     DW 0
     ENDS    
 
-    
     
     ; Very simple way to terminate the program
     xdef ~~_exit

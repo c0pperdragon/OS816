@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <os816.h>
 
 // test functions that will halt the program in case of an error
 
@@ -173,4 +174,3 @@ int main(int argc, char** argv)
     printf ("Tests completed\n");
     return 0;
 }
-

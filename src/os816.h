@@ -17,10 +17,5 @@ int receive(void);
 void sendstr(const char* str);
 
 // Compare strings and calculate length if identical.
-// If not identical returns -1
+// If not identical, return -1
 int strcmplen(const char* a, const char* b);
-
-// Memory copy operation that is optimized for larger blocks, utilizing the
-// MVN processor instruction. For shorter blocks, the one-time overhead will
-// dominate the operation. 
-void burstmemcpy(void* destination, void* source, unsigned int len);
