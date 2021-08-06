@@ -52,7 +52,7 @@ void os_init_screen(void)
 void os_reset_screen(void) 
 { 
     currentstyle = NORMAL_STYLE;
-    printf ("\033[0m");
+    printf ("\033[0m\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 }
 
 void os_display_char(zchar c) 
