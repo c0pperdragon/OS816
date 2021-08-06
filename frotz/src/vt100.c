@@ -14,7 +14,7 @@ void read_line_with_echo(char* buffer, int bsize)
     for (;;)
     {
     	c = getchar();
-        if (c=='\n')
+        if (c=='\n' || c=='\r')
         {            
             buffer[l] = 0; 
             return; 

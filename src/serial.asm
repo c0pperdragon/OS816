@@ -206,7 +206,9 @@ sendreceivebit:
     CLC
     XCE 
     BCC delay2  
-    LDX #18     ; fine-tuned to give same speed on Bernd €16 Mhz
+    NOP
+    NOP
+    LDX #12; #18     ; fine-tuned to give same speed on Bernd €12 Mhz
 delay2:
     DEX        ; 2 cycles
     BNE delay2 ; 3 cycles
@@ -225,7 +227,7 @@ delay2:
     LONGI OFF
 waitfor1_5bits:
 
-    LDX #21     ; fine-tuned to wait 1.5 bits on Bernd €16 Mhz
+    LDX #13     ; fine-tuned to wait 1.5 bits on Bernd €12 Mhz
     ; detect underlying hardware
     CLC
     XCE 

@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     int i;
     for (i=0; i<5; i++)
     {
-        printf("\033[32mMist!\n"); 
+        printf("Mist!\n"); 
         sleep(1000);
     }
     return 0;

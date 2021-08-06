@@ -16,6 +16,8 @@
     XREF ~~isatty
     XREF ~~lseek
     XREF ~~unlink
+    XREF ~~malloc
+    XREF ~~free
 
     
     CODE
@@ -115,8 +117,9 @@ BERND:                    ; 80FFF8
 RESETVECTOR:              ; 80FFFC
     DW $FFF2
     
-    ; use this tiny free space to force the linker to load stuff
-    DW    ~~open+~~close+~~read+~~write+~~isatty+~~lseek+~~unlink    
+    ; use this tiny free space to force the linker to load our stuff
+    ; before stdlib actually needs it
+    DW    ~~open+~~close+~~read+~~write+~~isatty+~~lseek+~~unlink+~~malloc+~~free
     ENDS
     
     

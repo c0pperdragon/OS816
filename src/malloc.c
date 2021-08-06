@@ -17,7 +17,7 @@ typedef struct FreeBlock {
 char isheapinitialized = 0;
 FreeBlock *firstfree = 0;
 
-
+/*
 void sendfreememory(char* label, unsigned long size, unsigned long address)
 {
     FreeBlock* f;
@@ -44,7 +44,7 @@ void sendfreememory(char* label, unsigned long size, unsigned long address)
         sendstr(buffer);
     }
 }
-
+*/
 void initheap(void)
 {
     firstfree = (FreeBlock*) HEAPSTART;
