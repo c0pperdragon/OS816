@@ -33,10 +33,9 @@ def append(data, filename, shortname):
     return data + header + bytes
 
 data = bytearray();
-data = append(data, "games/zork1.z3", "zork");
-data = append(data, "games/tube.z5", "tube");
-data = append(data, "games/wishbringer.z3", "wishbringer");
-#data = append(data, "games/dungeon.z5", "dungeon");
+data = append(data, "games/zork1.z3", "zork1");
+data = append(data, "games/hhgg.z3", "hitchhiker");
+# data = append(data, "games/wishbringer.z3", "wishbringer");
 
 f = open("romfiles.asm", mode='w', encoding='utf-8')
 gen(data,f)

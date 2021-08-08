@@ -45,6 +45,7 @@ void sendfreememory(char* label, unsigned long size, unsigned long address)
     }
 }
 */
+
 void initheap(void)
 {
     firstfree = (FreeBlock*) HEAPSTART;

@@ -19,3 +19,6 @@ void sendstr(const char* str);
 // Compare strings and calculate length if identical.
 // If not identical, return -1
 int strcmplen(const char* a, const char* b);
+
+// Generic heap allocation with sizes > 64K
+void *longalloc(unsigned long payloadsize);

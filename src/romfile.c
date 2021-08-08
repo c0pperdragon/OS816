@@ -2,18 +2,23 @@
 #include "os816.h"
 #include "romfile.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-typedef struct {
+// ----------------- facility to read ROM files ----------------------------
+
+typedef struct 
+{
+    unsigned char isopen;
+    unsigned char pad0,pad1,pad2;
     unsigned long filestart;
     unsigned long fileend;
     unsigned long filecursor;
-    unsigned char isopen;
-    unsigned char dummy,dummy2,dummy3;
-} RomFile;
+} 
+RomReadFile;
 
-#define CONCURRENTFILES 4
-RomFile romfiles[CONCURRENTFILES];
+#define CONCURRENTREADFILES 4
+RomReadFile romreadfiles[CONCURRENTREADFILES];
 
 int romfile_openread(const char * name)
 {
@@ -36,9 +41,9 @@ int romfile_openread(const char * name)
         }
 
         // found the correct image, now need to find a free file descriptor
-        for (i=0; i<CONCURRENTFILES; i++)
+        for (i=0; i<CONCURRENTREADFILES; i++)
         {
-            RomFile* f = &(romfiles[i]);
+            RomReadFile* f = &(romreadfiles[i]);
             if (f->isopen) { continue; }
             // yes, found a descriptor, set up for operation
             f->filestart = img + 9 + namelength;
@@ -51,24 +56,24 @@ int romfile_openread(const char * name)
     }
 }
 
-int romfile_closeread(int romfd) 
+int romfile_closeread(int readfd) 
 {
-    if (romfd>=0 && romfd<CONCURRENTFILES) 
+    if (readfd>=0 && readfd<CONCURRENTREADFILES) 
     {
-        romfiles[romfd].isopen = 0;
+        romreadfiles[readfd].isopen = 0;
         return 0;
     }
     return -1;
 }
 
-unsigned int romfile_read(int romfd, void * buffer, unsigned int len)
+unsigned int romfile_read(int readfd, void * buffer, unsigned int len)
 {
-    RomFile* f;
+    RomReadFile* f;
 
     if (len<1) { return 0; }
-    if (romfd<0 || romfd>=CONCURRENTFILES) { return 0; }
-
-    f = &(romfiles[romfd]);
+    
+    if (readfd<0 || readfd>=CONCURRENTREADFILES) { return 0; }
+    f = &(romreadfiles[readfd]);
     if (!f->isopen) { return 0; };
 
     if (f->filecursor+len > f->fileend)
@@ -81,51 +86,130 @@ unsigned int romfile_read(int romfd, void * buffer, unsigned int len)
     return len;        
 }
 
-long romfile_lseek(int romfd, long offset, int whence)
+long romfile_lseek(int readfd, long offset, int whence)
 {
-    if (romfd>=0 && romfd<CONCURRENTFILES) 
-    {
-        RomFile* f = &(romfiles[romfd]);
-        long newcursor;
-        
-        if (!f->isopen) { return -1; }
+    RomReadFile* f;
+    long newcursor;
 
-        switch (whence)
-        {   case SEEK_SET: 
-                newcursor =  f->filestart+offset;
-                break;
-            case SEEK_CUR:
-                newcursor += f->filecursor + offset;
-                break;            
-            case SEEK_END:
-                newcursor = f->fileend + offset;
-                break;
-            default: 
-                return -1;
-        }        
-        if (newcursor<f->filestart || newcursor>f->fileend){ return -1; }
-        f->filecursor = newcursor;
-        return newcursor;
-    }
-    return -1;
+    if (readfd<0 && readfd>=CONCURRENTREADFILES) { return -1; }
+    f = &(romreadfiles[readfd]);
+    if (!f->isopen) { return -1; }
+
+    switch (whence)
+    {   
+        case SEEK_SET: 
+            newcursor =  f->filestart+offset;
+            break;
+        case SEEK_CUR:
+            newcursor += f->filecursor + offset;
+            break;            
+        case SEEK_END:
+            newcursor = f->fileend + offset;
+            break;
+        default: 
+            return -1;
+    }        
+    if (newcursor<f->filestart || newcursor>f->fileend){ return -1; }
+    f->filecursor = newcursor;
+    return newcursor;
 }
 
+// ------------- facility to write ROM fies --------------------------
 
-int romfile_openwrite(const char * name)
+typedef struct WriteChunk
 {
-    // not implemented
-    return 0; // return -1;
+    struct WriteChunk* next;
+    unsigned int datasize;
+}
+WriteChunk;
+
+typedef struct 
+{
+    unsigned char isopen;
+    unsigned char pad0,pad1,pad2;
+    unsigned char* filename;
+    WriteChunk *firstchunk;
+    WriteChunk *lastchunk;
+} 
+RomWriteFile;
+
+#define CONCURRENTWRITEFILES 4
+RomWriteFile romwritefiles[CONCURRENTWRITEFILES];
+
+int romfile_openwrite(const char *name)
+{
+    int i;
+
+    
+    // find a free file descriptor
+    for (i=0; i<CONCURRENTWRITEFILES; i++)
+    {
+        RomWriteFile* f = &(romwritefiles[i]);
+        if (f->isopen) { continue; }        
+        // prepare file descriptor block
+        f->isopen = 1;
+        f->filename = longalloc( ((unsigned long)strlen(name))+1); 
+        if (!f->filename) { return -1; }
+        strcpy(f->filename, name);
+        f->firstchunk = 0;
+        f->lastchunk = 0;
+        return i;
+    }
+    // no descriptors available
+    return -1;
 }
 
 int romfile_closewrite(int writefd) 
 {
-    // not implemented
-    return 0;
+    char sb[100];
+    RomWriteFile* f;
+    WriteChunk* chunk;
+    WriteChunk *todelete;
+    
+    if (writefd<0 && writefd>=CONCURRENTWRITEFILES) { return -1; }
+    f = &(romwritefiles[writefd]);
+    if (!f->isopen) { return -1; }
+    
+    sprintf(sb, "Writing file: %s\n", f->filename);
+    sendstr(sb);
+    for (chunk=f->firstchunk; chunk; )
+    {
+        sprintf(sb, "%u bytes\n", chunk->datasize);
+        sendstr(sb);
+        
+        todelete = chunk;
+        chunk=chunk->next;
+        free(todelete);
+    }
+    free(f->filename);
+    f->isopen = 0;
+    
+    // not properly implemented
+    return -1;
 }
 
 unsigned int romfile_write(int writefd, void * buffer, unsigned int len)
 {
-    // not implemented
+    RomWriteFile* f;
+    WriteChunk* chunk;
+    
+    if (writefd<0 && writefd>=CONCURRENTWRITEFILES) { return -1; }
+    f = &(romwritefiles[writefd]);
+    if (!f->isopen) { return -1; }
+
+    if (len<1) { return 0; }
+    
+    chunk = longalloc(sizeof(WriteChunk) + (unsigned long) len);
+    if (!chunk) { return 0; }    
+    
+    chunk->next = 0;
+    chunk->datasize = len;
+    memcpy ( (void*) (((unsigned long) chunk) + sizeof(WriteChunk)), buffer, len);
+
+    if (!f->firstchunk) { f->firstchunk = chunk; }
+    if (f->lastchunk) { f->lastchunk->next = chunk; }
+    f->lastchunk = chunk;
+    
     return len;   
 }
 
