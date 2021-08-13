@@ -15,9 +15,9 @@ int main(int argc, char** argv)
 
     for (;;)
     {
-        int i = portin();
+        int i = IOPORT;
         i = i & pattern[animpointer];
-        portout (i);
+        IOPORT = (unsigned char) i;
         sleep(100);  
         
         animpointer=(animpointer+1)&0x0F;

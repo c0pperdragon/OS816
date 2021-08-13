@@ -1,4 +1,3 @@
-
 int romfile_openread(const char * name);
 int romfile_closeread(int readfd) ;
 unsigned int romfile_read(int readfd, void * buffer, unsigned int len);

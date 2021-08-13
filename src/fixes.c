@@ -1,4 +1,3 @@
-#include <os816.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,7 +16,7 @@ char* strdup(char* s)
     return m;
 }    
 
-// Replaement for broken fread of the WDC library which does not 
+// Replacement for broken fread of the WDC library which does not 
 // handle bank boundaries correcty.
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
@@ -50,7 +49,7 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 }
 
 // Replace standard memcpy with an optimized version that
-// can make use of the MVN instruction
+// can make use of the MVN instruction (not really a fix, though)
 
 // MVN instruction constructed in RAM
 unsigned char mvn[4] =
@@ -139,26 +138,3 @@ void *memcpy(void* destination, const void* source, unsigned int len)
     return destination;
 }
 
-
-int strcmplen(const char* a, const char* b)
-{
-    int i;
-    for (i=0; i<32767; i++)
-    {
-        if (a[i]!=b[i]) { return -1; };
-        if (a[i]==0) { return i; }
-    }
-    return -1;
-}
-
-
-void sendstr(const char* str)
-{
-    unsigned int i;
-    for (i=0; ;i++)
-    {
-        unsigned int c = str[i];
-        if (c==0) { return; }
-        send(c);
-    }
-}

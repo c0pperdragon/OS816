@@ -7,18 +7,13 @@ int main(int argc, char** argv);
 // Delay loop with reasonable precision
 void sleep(int milliseconds);
 
-// RAW port IO
-void portout(int data);
-int portin(void); 
-
 // Communication via the serial interface (with hardware handshake)
 void send(int data);
 int receive(void);
 void sendstr(const char* str);
 
-// Compare strings and calculate length if identical.
-// If not identical, return -1
-int strcmplen(const char* a, const char* b);
+// Facility to write to the flash area
+int writeflash(unsigned long address, void* data, unsigned int size);
 
-// Generic heap allocation with sizes > 64K
-void *longalloc(unsigned long payloadsize);
+// raw access to IO port
+#define IOPORT (*((unsigned char*)0x400000))

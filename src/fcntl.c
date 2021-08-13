@@ -1,11 +1,8 @@
-
-#include "os816.h"
-#include "romfile.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include "romfile.h"
+#include "os816.h"
 
 // file descriptor mapping
 // 0x00 - 0x0f for standard streams

@@ -181,16 +181,14 @@ void *malloc(size_t size)
 
 void *realloc(void *ptr, size_t size)
 {
-    
+    unsigned long prevsize;
     void* n;
     
     if (!ptr) { return longalloc((unsigned long)size); }
     if (!(n = longalloc((unsigned long)size) )) { return 0; }
-    
-    // Fill from source and don't care if it was not as big.
-    // Read-accessing any arbitrary memory address has no negative 
-    // consequences. There are no read-strobe IO registers anywhere in
-    // the whole OS816 system. 
+
+    prevsize = *((unsigned long*)(((unsigned long)ptr)-4));
+    if (prevsize<size) { size = (size_t) prevsize; }
     memcpy (n,ptr,size);  
 
     free (ptr);
