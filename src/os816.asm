@@ -8,19 +8,13 @@
     XREF ~~main
 
 ; --------------------- RAM layout ----------------------- 
-writeflash_mirrored set $00FF00
 stacktop            set $00FBFF
-
-    
-; -------------- Persistent data--------------------------
-    DATA
-hasbuffered:  db 0
-buffereddata: db 0
-    ENDS
+writeflash_mirrored set $00FF00
+hasbuffered         set $00FFF0
+buffereddata        set $00FFF2
         
     
 OS816 SECTION
-
 
     ORG $80EF00       ; This area will be replaced when flashing 
     ; -------------- start of the program initialization --------
@@ -115,6 +109,11 @@ START:
     ; 1K below end of bank
     LDA #stacktop
     TCS 
+    
+    ; initialize serial communication buffer
+    LDA #0
+    STA >hasbuffered
+    STA >buffereddata
 
     JMP STARTMAIN
 
@@ -486,7 +485,7 @@ BERND:                    ; 80FFF8
     ; The reset vector for the 65C816
 RESETVECTOR:              ; 80FFFC
     DW $FFF2
-   
+    DW 0                  ; padding
     
     ENDS 
     END
