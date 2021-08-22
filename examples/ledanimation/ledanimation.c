@@ -18,7 +18,7 @@ int main(int argc, char** argv)
         int i = IOPORT;
         i = i & pattern[animpointer];
         IOPORT = (unsigned char) i;
-        sleep(100);  
+        receive(100);  
         
         animpointer=(animpointer+1)&0x0F;
     }

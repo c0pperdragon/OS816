@@ -10,7 +10,7 @@ int main(int argc, char** argv)
     for (i=0; i<5; i++)
     {
         printf("Mist!\n"); 
-        sleep(1000);
+        receive(1000);
     }
     return 0;
 }

@@ -7,13 +7,10 @@
     XREF _END_UDATA
     XREF ~~main
 
-    ; specify heap location in case of using the standard allocator
-    XDEF ~~heap_start
-    XDEF ~~heap_end
-    DATA
-~~heap_start: dl $010000
-~~heap_end:   dl $01FFFF
-    ENDS
+; --------------------- RAM layout ----------------------- 
+writeflash_mirrored set $00FF00
+stacktop            set $00FBFF
+
     
 ; -------------- Persistent data--------------------------
     DATA
@@ -23,27 +20,11 @@ buffereddata: db 0
         
     
 OS816 SECTION
-    ORG $80F000
-    
-; -------------------- STARTUP -------------------------------
-START:
-    LONGI OFF
-    LONGA OFF
 
-    ;  ; set the output port to a defined state
-    LDA #$FF
-    STA >$400000
-    
-    ; set up 16 bit mode for all registers and memory access
-    REP #$30 ;16 bit registers
-    LONGI ON
-    LONGA ON
 
-    ; to work around a bug in sprintf start stack
-    ; 1K below end of bank
-    LDA #$FC00
-    TCS 
-
+    ORG $80EF00       ; This area will be replaced when flashing 
+    ; -------------- start of the program initialization --------
+STARTMAIN:
     ; set D register to the bank of UDATA
     LDA #^_BEG_UDATA
     TCD
@@ -63,8 +44,7 @@ START:
     MVN #^_BEG_UDATA,#^_BEG_UDATA
 NOCLEAR:
 
-    ; Copy initial content into DATA segment. there are at least the
-    ; heap vectors in this segment, so no need to check for its existence.
+    ; Copy initial content into DATA segment. 
     ; Also the Data Bank Register will be correctly set to this bank  
     ; by the MVN instruction    
     LDA #_END_DATA-_BEG_DATA ;number of bytes to copy
@@ -73,28 +53,81 @@ NOCLEAR:
     LDY #<_BEG_DATA ;get dest into Y
     MVN #^_ROM_BEG_DATA,#^_BEG_DATA ;copy bytes
 
-    ; start the main function, and stop CPU upon return
+    ; start the main function
     PEA #^argv
     PEA #<argv    
     PEA #1
     JSL >~~main
-    STP
+    
+    ; do proper exit handling
+    PHA
+    JSL ~~_exit
 
 progname:
     DB 79,83,56,49,54,0  ; "OS816"
-
-    argv:
+argv:
     DW #<progname
     DW #^progname
     DW 0
     DW 0
 
     
-; --------------- Program termination ---------------------
-    xdef ~~_exit
-~~_exit:
-    STP
 
+    ORG $80F000       ; Start of resident boot loader area     
+; ------------ EXPORTS FROM THE BOOT LOADER CODE --------------    
+    xdef ~~_exit
+    xdef ~~send
+    xdef ~~receive
+	xdef ~~sendstr
+    xdef ~~writeflash
+~~_exit:
+    JMP >restart
+~~send:
+    JMP >send
+~~receive:
+    JMP >receive
+~~sendstr:
+    JMP >sendstr
+~~writeflash:
+    JMP >writeflash_mirrored
+    
+; -------------------- STARTUP -------------------------------
+START:
+    LONGI OFF
+    LONGA OFF
+
+    ;  ; set the output port to a defined state
+    LDA #$FF
+    STA >$400000
+    
+    ; set up 16 bit mode for all registers and memory access
+    REP #$30 ;16 bit registers
+    LONGI ON
+    LONGA ON
+
+    ; copy flash programming routines to the very top of RAM for later use   
+    LDA #writeflashend-writeflash-1  ; length-1
+    LDX #<writeflash            ; get source into X
+    LDY #<writeflash_mirrored   ; get dest into Y
+    MVN #^writeflash,#^writeflash_mirrored   ;copy bytes
+
+    ; to work around a bug in sprintf start stack
+    ; 1K below end of bank
+    LDA #stacktop
+    TCS 
+
+    JMP STARTMAIN
+
+; ------------------ RESTART or SHUTDOWN --------------------
+; Let the machine restart or stop entirely 
+; This depends on the exit-value. All negative values will cause a complete stop. 
+restart:
+    ; initial stack layout:  
+    ;   SP+1, SP+2, SP+3    return address
+    ;   SP+4, SP+5          return value from main() or exit()
+    LDA <4,S
+    BPL START
+    STP
     
 ; ----------------- Serial communication ------------------    
 ; Serial communication via the generic input and output ports.
@@ -112,8 +145,7 @@ progname:
 ; are left high after that. 
 
     ; send on byte via serial
-    xdef ~~send
-~~send:
+send:
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          data to send (in lower bits only)
@@ -163,8 +195,11 @@ waitforready:
     RTL
 
     ; receive one byte via serial
-    xdef ~~receive
-~~receive:
+receive:
+    ; initial stack layout:  
+    ;   SP+1, SP+2, SP+3    return address
+    ;   SP+4, SP+5          timeout (in milliseconds)
+
     SEP #$30 ; switch to 8 bit registers
     longa off
     longi off
@@ -261,13 +296,19 @@ waitformoreincommingdata:
     STA |hasbuffered
     
 donereceive:
-    ; the return value is provided in Y
-    TYA
     ; switch to 16 bit registers
     REP #$30 
     LONGI ON
     LONGA ON
-    ; take down stack and return result in 16 bit
+    
+    ; take down stack
+    ; take down stack and return
+    LDA <2,S
+    STA <4,S
+    PLA 
+    STA <1,S    
+    ; the return value is provided in Y
+    TYA
     AND #$00FF
     RTL
     
@@ -330,9 +371,9 @@ delay3:
     
     RTS
 
-    
-	xdef	~~sendstr
-~~sendstr:
+; ----------- Simple convenience function --------------------    
+
+sendstr:
 	longa	on
 	longi	on
 	tsc
@@ -364,162 +405,67 @@ c_2	set	2
 	rtl
 L10045:
 	pei	<L43+c_2
-	jsl	~~send
+	jsl	send
 	inc	<L43+i_1
 	bra	L10044
 L42	equ	4
 L43	equ	1
     
-    
-; ------------------ tuned sleep method -----------------     
-    xdef ~~sleep
-~~sleep:
-    longa on
-    longi on
-    ; initial stack layout:  
-    ;   SP+1, SP+2, SP+3    return address
-    ;   SP+4, SP+5          16-bit parameter: milliseconds
-    
-    ; normally this loop is fine-tuned to take 10000 clocks per iteration
-    ; (one-time method call overhead can not be avoided) 
-    LDY #1998    
-    
-    ; check if the code is running on a true 65c816 - use cycle-exact timing
-    CLC
-    XCE 
-    BCC delayloop
-    ; emulated by Bernd. use different delays for this (tuned by measurement)
-    LDY #190
-    
-delayloop:
-    LDA <4,S   
-    BEQ done
-continue:
-    TYX              ; 2 cycles
-    TYX              ; 2 cycles
-    TYX              ; 2 cycles
-continue2:
-    DEX              ;   2 cycles
-    BNE continue2    ;   2 or 3 (if taken) cycles
-    DEC a            ; 2 cycles
-    BNE continue     ; 2 or 3 (if taken) cycles
-done:
-                     ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000
-    ; take down parameters, fix return address and return
-    LDA <2,S
-    STA <4,S
-    PLA 
-    STA <1,S
-    RTL
-    
+        
 ; ---------------- Write to FLASH -------------------------
-
-    xdef ~~writeflash
-~~writeflash:
-    ; initial stack layout:  
-    ;   SP+1, SP+2, SP+3            return address
-    ;   SP+4, SP+5, SP+6, SP+7      destination address
-    ;   SP+8, SP+9, SP+10, SP+11    source address
-    ;   SP+12, SP+13                length
-R0	equ	1
-R1	equ	5
-R2	equ	9
-R3	equ	13
+; This code must be mirrored to RAM before using it, because
+; ROM can not be accessed while programming is active
+writeflash:
+    ; stack layout (accessed via D):  
+    ;   SP+1, SP+2, SP+3          return address
+    ;   SP+4, SP+5, SP+6, SP+7    destination address
+    ;   SP+8, SP+9, SP+10, SP+11  source address
+    ;   SP+12, SP+13              length    
 	longa	on
 	longi	on
-	tsc
-	sec
-	sbc	#L2
-	tcs
-	phd
-	tcd
-address_0	set	4
-data_0	set	8
-size_0	set	12
-mem_1	set	0
-src_1	set	4
-i_1	set	8
-	lda	<L2+address_0
-	sta	<L3+mem_1
-	lda	<L2+address_0+2
-	sta	<L3+mem_1+2
-	lda	<L2+data_0
-	sta	<L3+src_1
-	lda	<L2+data_0+2
-	sta	<L3+src_1+2
-	lda	<L2+address_0
-	cmp	#<$800000
-	lda	<L2+address_0+2
-	sbc	#^$800000
-	bcc	L4
-	lda	<L2+size_0
-	sta	<R0
-	stz	<R0+2
-	lda	<R0
-	clc
-	adc	<L2+address_0
-	sta	<R1
-	lda	<R0+2
-	adc	<L2+address_0+2
-	sta	<R1+2
-	lda	#$0
-	cmp	<R1
-	lda	#$88
-	sbc	<R1+2
-	bcs	L10001
-L4:
-	lda	#$0
-L7:
-	tay
-	lda	<L2+2
-	sta	<L2+2+10
-	lda	<L2+1
-	sta	<L2+1+10
-	pld
-	tsc
-	clc
-	adc	#L2+10
-	tcs
-	tya
-	rtl
-L10001:
-	stz	<L3+i_1
-	bra	L10005
-L10004:
-	sep	#$20
+    TSC
+    PHD
+    TCD
+        
+    LDX <12
+    BEQ writeflashdone
+    LDY #0
+writeflashloop:
+    SEP #$20
 	longa	off
-	ldy	<L3+i_1
-	lda	[<L3+src_1],Y
-	and	[<L3+mem_1],Y
-	cmp	[<L3+src_1],Y
-	rep	#$20
+    LDA #$AA
+    STA >$805555
+    LDA #$55
+    STA >$802AAA
+    LDA #$A0
+    STA >$805555
+    LDA [<8],Y
+    STA [<4],Y
+waitflashstable:
+    LDA [<4],Y
+    CMP [<4],Y
+    BNE waitflashstable
+    CMP [<4],Y
+    BNE waitflashstable
+    REP #$20
 	longa	on
-	bne	L4
-	inc	<L3+i_1
-L10005:
-	lda	<L3+i_1
-	cmp	<L2+size_0
-	bcc	L10004
-	stz	<L3+i_1
-	bra	L10010
-L10009:
-	sep	#$20
-	longa	off
-	ldy	<L3+i_1
-	lda	[<L3+src_1],Y
-	sta	[<L3+mem_1],Y
-	rep	#$20
-	longa	on
-	inc	<L3+i_1
-L10010:
-	lda	<L3+i_1
-	cmp	<L2+size_0
-	bcc	L10009
-	lda	#$1
-	bra	L7
-L2	equ	18
-L3	equ	9
-	
+    INY
+    DEX
+    BNE writeflashloop   
+    
+writeflashdone:
+	LDA	<1
+    STA <11 
+	LDA	<2
+    STA <12 
+    PLD
+    PLA
+    PLA
+    PLA
+    PLA
+    PLA
+    RTL	
+writeflashend:
 
 ; ----------------- Reset code ----------------------------    
     ; This is a very tricky startup code that needs to work with both

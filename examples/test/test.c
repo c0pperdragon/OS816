@@ -115,12 +115,12 @@ void printptr(void* ptr)
     long l = (long) ptr;
     int hi = (int) (l>>16);
     int lo = (int) l;
-    printf ("%04x%04x\n", hi,lo);
+//    printf ("%04x%04x\n", hi,lo);
 }
 
 void testmalloc(void)
 {
-    void *a,*b,*c,*d,*e,*f,*g;
+    void *a,*b,*c,*d,*e,*f,*g,*h;
 
     a = malloc(1000);
     printptr(a);
@@ -132,13 +132,17 @@ void testmalloc(void)
     printptr(d);
     e = malloc(3000);
     printptr(e);
-    free(b);
-    free(d);
-    free(c);
+    if (b) { free(b); }
+    if (d) { free(d); }
+    if (c) { free(c); }
     f = malloc(20000);
     printptr(f);    
     g = malloc((unsigned int)60000);
     printptr(g);    
+    h = malloc((unsigned int)50000);
+    printptr(h);    
+    free(h);
+    free(g);
 }
 
 void testfileinput(void)
@@ -146,12 +150,77 @@ void testfileinput(void)
     FILE* f = fopen("x","rb");
     char buffer[11];
     int len = fread(buffer, 1,10, f);
-    test(len, 2);
+    test(len, 2);               // 17
     buffer[len]='\0';
-    teststr(buffer, "ab");
+    teststr(buffer, "ab");      // 18
     fclose(f);
 }
+
+void testfileoutput(void)
+{
+    FILE* f;
+    unsigned int i;
+    unsigned long sum;
     
+    if (! (f = fopen("y","wb")) ) 
+    { 
+        printf("Can not open for write\n"); 
+        return; 
+    }
+    for (i=1; i<=2000; i++)
+    {
+        if (fwrite(&i, 2, 1, f)!=1)        
+        {
+            printf("Error on writing\n"); 
+            return; 
+        }
+    }
+    if (fclose(f) ) 
+    {
+        printf("Error on closing write file\n"); 
+        return; 
+    }
+    
+    if (! (f = fopen("y", "rb")) )
+    { 
+        printf("Can not open for read\n"); 
+        return; 
+    }
+    if (fseek(f,(long)0,SEEK_END)) 
+    {
+        printf("Error on fseek\n"); 
+        return; 
+    }
+    test ((unsigned int) ftell(f), 4000);                                    // 19
+    fseek(f,(long)0,SEEK_SET);
+    sum=0;
+    while (fread (&i, 2, 1, f) == 1) 
+    {   
+        sum+=i;
+    }    
+    fclose(f);
+    test ((unsigned int) sum, (unsigned int) (2001*1000));      // 20
+}
+    
+void testfseek(void)
+{
+    FILE* f;
+    char buffer[100];
+    
+    if (! (f = fopen("z","wb")) )                          { printf("fseek 1\n"); return; }
+    if (fwrite("Fill in test string >____<.", 1,28,f)!=28) { printf("fseek 2\n"); return; }
+    if (fseek(f, 21L, SEEK_SET)!=0)                        { printf("fseek 3\n"); return; }
+    if (fwrite("GOOD", 1,4,f)!=4)                          { printf("fseek 4\n"); return; }
+    if (fclose(f)!=0)                                      { printf("fseek 5\n"); return; }
+
+    if (! (f = fopen("z","rb")) )                          { printf("fseek 6\n"); return; }
+    if (fread(buffer, 1, 28, f)!=28)                       { printf("fseek 7\n"); return; }
+    teststr(buffer, "Fill in test string >GOOD<.");       // 21
+    fseek(f, -7L, SEEK_END);
+    if (fread(buffer+8, 1, 4, f)!=4)                         { printf("fseek 8\n"); return; }
+    teststr(buffer, "Fill in GOOD string >GOOD<.");       // 22
+    if (fclose(f)!=0)                                      { printf("fseek 9\n"); return; }
+}
 
 // run suit of tests
 int main(int argc, char** argv)
@@ -168,9 +237,11 @@ int main(int argc, char** argv)
     teststrings();
     testsprintf();
 
-    // test file input
+    // test file io
     testfileinput();
+    testfileoutput();
+    testfseek();
 
     printf ("Tests completed\n");
-    return 0;
+    return (-1); // do not restart program
 }

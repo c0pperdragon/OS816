@@ -4,16 +4,13 @@
 // Program entry point. Needs to be provided by the user program.
 int main(int argc, char** argv); 
 
-// Delay loop with reasonable precision
-void sleep(int milliseconds);
-
 // Communication via the serial interface (with hardware handshake)
 void send(int data);
-int receive(void);
+int receive(unsigned int timeout);
 void sendstr(const char* str);
 
 // Facility to write to the flash area
-int writeflash(unsigned long address, void* data, unsigned int size);
+void writeflash(char* target, void* data, unsigned int size);
 
 // raw access to IO port
 #define IOPORT (*((unsigned char*)0x400000))

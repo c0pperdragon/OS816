@@ -7,12 +7,15 @@
 char* strdup(char* s)
 {
     unsigned int len;
-    unsigned int i;
     char* m;
-    for (len=0; (len<65000) && (s[len]!=0); len++);
+    
+    for (len=0; (len<65534) && (s[len]!=0); len++);
     m = (char*) malloc(len+1);
-    for (i=0; i<len; i++) { m[i] = s[i]; }
-    m[len] = 0;
+    if (m)
+    {   
+        memcpy(m,s,len);
+        m[len] = 0;
+    }
     return m;
 }    
 
@@ -23,6 +26,7 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
     size_t i,j;
     int b;
     unsigned char* p = (unsigned char*) ptr;
+    
     if (size==1)
     {
         for (i=0; i<nmemb; i++)
@@ -40,16 +44,18 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
             {
                 b = getc(stream);
                 if (b<0) { return i; }  // EOF encountered
-                *((unsigned long*)ptr) = (unsigned char) b;
-                p = (unsigned char*) (((unsigned long) p) + 1); // proper 32-bit increment
+                p[j] = b;
             }
+            p+=size;
         }
     }
     return nmemb;
 }
 
+
+
 // Replace standard memcpy with an optimized version that
-// can make use of the MVN instruction (not really a fix, though)
+// can make use of the MVN instruction (not really a fix, but speeds things up)
 
 // MVN instruction constructed in RAM
 unsigned char mvn[4] =
@@ -62,13 +68,6 @@ unsigned char mvn[4] =
 
 void *memcpy(void* destination, const void* source, unsigned int len)
 {
-//    char buffer[100];
-//    sprintf(buffer, "MEMCPY %04x%04x %04x%04x %u\n", 
-//        (unsigned)(((unsigned long)destination)>>16), (unsigned)((unsigned long)destination),
-//        (unsigned)(((unsigned long)source)>>16), (unsigned)((unsigned long)source),
-//        len);
-//    sendstr(buffer);
- 
     // if nothing to copy, just pass
     if (len==0)
     {

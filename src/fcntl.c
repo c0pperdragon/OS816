@@ -38,11 +38,14 @@ int isatty(int fd)
 
 long lseek(int fd, long offset, int whence)
 {
-    // only supported when reading romfiles
-    if ((fd&0x0C)==0x04) 
+    if ((fd&0x0C)==0x04)     // reading descriptor
     {
-        return romfile_lseek(fd&0x03, offset, whence);
+        return romfile_lseekread(fd&0x03, offset, whence);
     }        
+    if ((fd&0x0C)==0x08)     // writing descriptor
+    {
+        return romfile_lseekwrite(fd&0x03, offset, whence);
+    }
     return -1;
 }
 
@@ -69,7 +72,7 @@ size_t read(int fd, void * buffer, size_t len)
 
     if (fd==0) // stdin
     {
-        ((unsigned char *)buffer) [0] = (unsigned char) receive();
+        ((unsigned char *)buffer) [0] = (unsigned char) receive(0);
         return 1;
     }   
     if ((fd&0x0C)==0x04)    // romfile read
