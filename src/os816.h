@@ -4,9 +4,12 @@
 // Program entry point. Needs to be provided by the user program.
 int main(int argc, char** argv); 
 
+// Tuned delay loop
+void sleep(unsigned int milliseconds);
+
 // Communication via the serial interface (with hardware handshake)
 void send(int data);
-int receive(unsigned int timeout);
+int receive(void);   // returns either the next byte or -1 if nothing available
 void sendstr(const char* str);
 
 // Facility to write to the flash area

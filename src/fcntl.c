@@ -70,9 +70,11 @@ size_t read(int fd, void * buffer, size_t len)
 {
     if (len<1) { return 0; }
 
-    if (fd==0) // stdin
+    if (fd==0)             // serial read
     {
-        ((unsigned char *)buffer) [0] = (unsigned char) receive(0);
+        int b;
+        do { b=receive(); } while (b<0);
+        ((unsigned char *)buffer) [0] = (unsigned char) b;
         return 1;
     }   
     if ((fd&0x0C)==0x04)    // romfile read
