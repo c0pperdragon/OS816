@@ -1,12 +1,24 @@
 
 ; --------------------- RAM layout ---------------------------- 
-stacktop            set $00FBFF
-writeflash_mirrored set $00FF00
-hasbuffered         set $00FFF0
-buffereddata        set $00FFF2
+stacktop            set $00FBFF   ; stay 1K clear of top to work around a bug in sprintf
+writeflash_mirrored set $00FF80   ; 96 byte
+buffereddata        set $00FFE0   ; 30 byte
+numbuffered         set $00FFFE   ; 8 bit
+numconsumed         set $00FFFF   ; 8 bit
+
+; The timeouts for waiting for incomming data after asserting RTS and then also after
+; de-asserting the line again. 
+; For true 65c816:
+;    One timeout unit is 17 clocks, so a receive function call will
+;    cause an idle delay of about 500 microseconds.
+; For Bernd emulation:
+timeout1             set 244
+timeout2             set 50
 
 BOOT SECTION 
     ORG $80F000     
+    LONGA ON
+    LONGI ON
     
 ; ------------ JUMP TABLE INTO THE BOOT LOADER CODE --------------    
     JMP >exit                 ; 80F000
@@ -20,7 +32,6 @@ BOOT SECTION
 start:
      ;  ; set the output port to a defined state
     LDA #$00FF
-    
     SEP #$20 
     STA >$400000
     REP #$20
@@ -31,14 +42,13 @@ start:
     LDY #<writeflash_mirrored   ; get dest into Y
     MVN #^writeflash,#^writeflash_mirrored   ;copy bytes
 
-    ; initial stack position
+    ; initial stack pointer
     LDA #stacktop
     TCS 
     
     ; initialize serial communication buffer
     LDA #0
-    STA >hasbuffered
-    STA >buffereddata
+    STA >numbuffered  ;and also clear numconsumed
 
     ; start the user (non-bootloader) program
     JMP $80EFFC
@@ -53,7 +63,6 @@ exit:
     LDA <4,S
     BPL start
     STP
-
     
 ; ----------------- Tuned delay loop ----------------------
 sleep:
@@ -64,14 +73,12 @@ sleep:
     ; normally this loop is fine-tuned to take 10000 clocks per iteration
     ; (one-time method call overhead can not be avoided) 
     LDY #1998    
-    
     ; check if the code is running on a true 65c816 - use cycle-exact timing
     CLC
     XCE 
     BCC delayloop
     ; emulated by Bernd. use different delays for this (tuned by measurement)
     LDY #190
-    
 delayloop:
     LDA <4,S   
     BEQ done
@@ -82,10 +89,9 @@ continue:
 continue2:
     DEX              ;   2 cycles
     BNE continue2    ;   2 or 3 (if taken) cycles
-    DEC a            ; 2 cycles
+    DEC A            ; 2 cycles
     BNE continue     ; 2 or 3 (if taken) cycles
-done:
-                     ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000                     
+done:                ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000                     
     ; take down parameters, fix return address and return
     LDA <2,S
     STA <4,S
@@ -98,36 +104,44 @@ done:
 ; In order to not need any form of expernal uart receiver, hardware flow control
 ; via a CTS/RTS handshake is applied. With this the CPU only needs to handle input
 ; when it is actually prepared for it.
-; Communication is done with 9600 baud, one start bit, one stop bit, no parity.
+; Communication is done one start bit, one stop bit, no parity.
+; When running on genuine 65C816, the speed is 115200 baud.
+; On Bernd the speed is clocked down to 9600 baud.
 
 ; Pin assignments:
 ;   TX    Output bit 0
-;   RX    Input bit 0
+;   RX    Input bit 7
 ;   RTS   Output bit 1
-;   CTS   Input bit 1
+;   CTS   Input bit 6
 ; All other output pins are just set high when the serial communcation is running, and
 ; are left high after that. 
 
-    ; send on byte via serial
+    ; -- send one byte via serial
 send:
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          data to send (in lower bits only)
-    SEP #$30 ; switch to 8 bit registers
+    ; save data bank register
+    PHB      
+    ; switch to 8 bit accu/memory
+    SEP #$20 
     longa off
-    longi off
-    
-    ; must wait until the receiver is ready to accept new data (our CTS must be low)
+    ; make IO address available via DBR
+    LDA #$40 
+    PHA
+    PLB      
+    ; must wait until the receiver is ready to accept new data (incomming CTS must be low)
 waitforready:
-    LDA >$400000
-    AND #$02
-    BNE waitforready
-
+    BIT |0
+    BVS waitforready
+    ; prepare the other output bits for the io port
+    LDA #$FF
+    PHA
     ; send one byte bit by bit (1 start bit, 1 stop bit, no parity)
-    LDA <4,S
+    LDA <4+2,S
     CLC         
-    JSR sendreceivebit ; start bit
-    ROR A       
+    JSR sendreceivebit ; start bit    6 cycles
+    ROR A              ;              2 cycles                
     JSR sendreceivebit ; bit 0
     ROR A       
     JSR sendreceivebit ; bit 1
@@ -137,236 +151,264 @@ waitforready:
     JSR sendreceivebit ; bit 3
     ROR A       
     JSR sendreceivebit ; bit 4
-    ROR A       
+    ROR A                     
     JSR sendreceivebit ; bit 5
-    ROR A       
+    ROR A              
     JSR sendreceivebit ; bit 6
-    ROR A       
-    JSR sendreceivebit ; bit 7
-    SEC        
-    JSR sendreceivebit  ; stop bit
-    
-    ; switch to 16 bit registers
-    REP #$30 
-    LONGI ON
+    ROR A              
+    JSR sendreceivebit ; bit 7    
+    SEC                ;             2 cycles
+    JSR sendreceivebit ; stop bit 
+    PLA
+    ; switch to 16 bit accu/memory
+    REP #$20 
     LONGA ON
-    
+    ; restore DBR
+    PLB
     ; take down stack and return
     LDA <2,S
     STA <4,S
     PLA 
     STA <1,S
     RTL
-
-    ; receive one byte via serial
+  
+    ; -- receive one byte via serial
 receive:
-    ; initial stack layout:  
-    ;   SP+1, SP+2, SP+3    return address
-
-    SEP #$30 ; switch to 8 bit registers
+    ; save data bank register 
+    PHB      
+    ; switch to 8 bit accu/memory
+    SEP #$20 
     longa off
-    longi off
-
-    ; when there is a byte already in buffer, consume this first
-    LDA |hasbuffered
-    BEQ bufferempty
-    STZ |hasbuffered
-    LDY |buffereddata
-    BRL donereceive    
-bufferempty:
-
-    ; must notify the sender that we are read to accept data
+    ; when there is unconsumed data left in buffer, no need to get more
+    LDA >numconsumed
+    CMP >numbuffered
+    BMI donereceive
+    ; completely reset buffer
+    LDA #0
+    STA >numbuffered 
+    STA >numconsumed 
+    ; prepare accessing the io addresses
+    LDA #$40
+    PHA
+    PLB
+    ; notify the sender that we are ready to accept data
     LDA #$FD      ; set RTS low
-    STA >$40FD00  ; sent value on data bus and high address lines
-
-    ; wait for incomming start bit
-waitforincommingdata:
-    LDA >$400000
-    LSR
-    BCS waitforincommingdata
-
-    ; prevent more data from coming in
-    LDA #$FF      ; set RTS to high
-    STA >$40FF00  ; sent value on data bus and high address lines
-    
-    ; wait to reach the middle of the first data bit
-    JSR waitfor1_5bits
-
-    LDA #$FF   ; outgoing bits are all 1s
-    ; receive the byte bit by bit
-    ROR A
-    JSR sendreceivebit ; bit 0
-    ROR A       
-    JSR sendreceivebit ; bit 1
-    ROR A       
-    JSR sendreceivebit ; bit 2
-    ROR A       
-    JSR sendreceivebit ; bit 3
-    ROR A       
-    JSR sendreceivebit ; bit 4
-    ROR A       
-    JSR sendreceivebit ; bit 5
-    ROR A       
-    JSR sendreceivebit ; bit 6
-    ROR A       
-    JSR sendreceivebit ; bit 7
-    ROR A
-    TAY
-    
-    ; wait some additional time in case one more byte arrives
-    LDX #255   ; loops to wait on genuine 65c816
-    CLC
-    XCE 
-    BCC waitformoreincommingdata  
-    LDX #35    ; loops to wait on Bernd
-waitformoreincommingdata:
-    DEX
-    BEQ donereceive
-    LDA >$400000
-    LSR
-    BCS waitformoreincommingdata
-    
-    ; keep current byte here temporarily
-    STY |hasbuffered
-    
-    ; read the second byte
-    JSR waitfor1_5bits
-
-    LDA #$FF   ; outgoing bits are all 1s
-    ; receive the byte bit by bit
-    ROR A
-    JSR sendreceivebit ; bit 0
-    ROR A       
-    JSR sendreceivebit ; bit 1
-    ROR A       
-    JSR sendreceivebit ; bit 2
-    ROR A       
-    JSR sendreceivebit ; bit 3
-    ROR A       
-    JSR sendreceivebit ; bit 4
-    ROR A       
-    JSR sendreceivebit ; bit 5
-    ROR A       
-    JSR sendreceivebit ; bit 6
-    ROR A       
-    JSR sendreceivebit ; bit 7
-    ROR A
-    
-    ; set up buffer and return correct value here
-    STA |buffereddata
-    LDY |hasbuffered
-    LDA #1
-    STA |hasbuffered
-    
+    STA |0
+    ; Implement an edge-detector with latency jitter as low as possible.
+    ; Here the uncertainty is about 9 clocks which is just 0.1 bits
+state_RTS_active:
+    CLC           ; carry flag for timeout   ; 2
+    BIT |0                                   ; 4
+    BPL startbitdetected                     ; 2  2
+    LDA #256-timeout1                        ; 2
+waitforstartbit:
+    BIT |0                                   ; 4
+    BPL startbitdetected                     ; 2
+    ADC #1        ; progress timeout         ; 2
+    BIT |0                                   ; 4
+    BPL startbitdetected                     ; 2
+    BCC waitforstartbit                      ; 3
+timeoutreached:
+    BRA set_RTS_inactive
+startbitdetected:
+    LDA #$FE                                 ; 2  4
+    PHA                                      ; 3  7
+    JSR receiveandstorebyte                  ; 6  13
+    PLA
+    ; when buffer is not too full, keep RTS active
+    LDA >numbuffered
+    CMP #25
+    BPL state_RTS_active
+    ; set RTS high
+set_RTS_inactive:
+    LDA #$FF      
+    STA |0
+    ; second implementation of the edge-detector. this is used
+    ; in the state state when RTS is already de-asserted.
+    ; Then the sender should stop as soon as possible. but may
+    ; send a few more bytes.
+state_RTS_inactive:
+    CLC           ; carry flag for timeout   
+    BIT |0                                   
+    BPL startbitdetected2                    
+    LDA #256-timeout2                          
+waitforstartbit2:                            
+    BIT |0                                   
+    BPL startbitdetected2                    
+    ADC #1        ; progress timeout         
+    BIT |0                                    
+    BPL startbitdetected2                    
+    BCC waitforstartbit2                     
+timeoutreached2:
+    BRA donereceive
+startbitdetected2:
+    LDA #$FF
+    PHA
+    JSR receiveandstorebyte                  
+    PLA
+    BRA state_RTS_inactive
+    ; after operation, may or may not have data in buffer
+    ; when numbuffered > 0, there is something usable
 donereceive:
-    ; switch to 16 bit registers
-    REP #$30 
-    LONGI ON
+    LDY #$FFFF             ; default value for no data
+    LDA >numbuffered
+    BEQ returnfromreceive  ; when nothing here
+    LDA >numconsumed
+    TAX
+    INC A
+    STA >numconsumed       ; progress numconsumed counter
+    LDA >buffereddata,X
+    TAY                    ; 0-expand to 16 bit
+returnfromreceive:
+    REP #$20 
     LONGA ON
-    
-    ; the return value is provided in Y
     TYA
-    AND #$00FF
-    RTL
-    
+    PLB
+    RTL    
+
+    ; Subroutine to fetch a byte of data and store in input buffer
+    ; routine will terminate as quickly as possible but only
+    ; after input level is inactive (high) again.
+    ; With 0 - 9 clocks jitter, need to do the first sampling at
+    ; 130 clocks after the flank of the start bit
+receiveandstorebyte:  
+    LONGA OFF                                            ;    13
+    ; add some delay to get the first bit sample point correct
+    ; detect underlying hardware
+    CLC                                                  ; 2  15
+    XCE                                                  ; 2  17
+    BCC true65c816_2                       ; branch taken: 3  20
+berndemulation_2:
+    LDX #6                                              
+delay4:
+    DEX                                                  
+    BNE delay4
+    BRA startreceivebyte
+true65c816_2:
+    LDX #7                                               ; 3  23
+delay5: 
+    DEX                                                  ; 2  25 30 35 40 45   
+    BNE delay5                                          ; 2/3 28 33 38 43 47  
+startreceivebyte:
+    NOP                                                  ; 2  49
+    ; pass down the pattern for other output bits 
+    LDA <3,S                                             ; 4  53
+    PHA                                                  ; 3  56
+    ; prepare outgoing TX bits to be all idle
+    LDA #$FF                                             ; 2  58
+    SEC                                                  ; 2  60    
+    ; transfer
+    JSR sendreceivebit ; bit 0                           ; 70 130
+    ROR A       
+    JSR sendreceivebit ; bit 1
+    ROR A       
+    JSR sendreceivebit ; bit 2
+    ROR A       
+    JSR sendreceivebit ; bit 3
+    ROR A       
+    JSR sendreceivebit ; bit 4
+    ROR A                     
+    JSR sendreceivebit ; bit 5
+    ROR A              
+    JSR sendreceivebit ; bit 6
+    ROR A              
+    JSR sendreceivebit ; bit 7    
+    ROR A
+    ; temporarily keep data here
+    TAY 
+    ; remove parameter from stack
+    PLA
+    ; store the data if there is space left
+    LDA >numbuffered
+    CMP #30
+    BPL receiveandstoredone
+    TAX
+    INC A
+    STA >numbuffered
+    TYA
+    STA >buffereddata,X
+receiveandstoredone:
+    ; wait until input reaches idle level
+    ; (either from stop bit, or when last data bit was high)
+    BIT |0                                  
+    BPL receiveandstoredone                   
+    RTS
+    LONGA ON
+
     ; Send the bit that is given in the carry flag while at the
     ; same time receive the current input into the carry flag. 
     ; The A register needs to be conserved during this.
-    ; This subroutine uses 8-bit registers.
+    ; The caller prepares DBR to point to the IO range.
+    ; This subroutine uses 8-bit accu/memory. Calling is done with near JSR.
+    ; The other bits for output port are taken from the stake (just above return address).
+    ; For real 86c816:
+    ;   To get the 115200 baud with 10 Mhz clock, each bits needs to take about
+    ;   87 clocks. With 8 clocks used by the caller, this function is tuned to 
+    ;   consume exactly 79 clocks.
+    ;   Sampling the input bit is done at about 70 clocks after the call.
+    ; For Bernd emulation:
     LONGA OFF
-    LONGI OFF
 sendreceivebit:
-    TAY
-   
-    ; bild output data with carry flag in bit 0, the rest is high bits
-    ROL
-    ORA #$FE
-    STA >$400000  ; write to output port
-
-    ; fetch input
-    LDA >$400000
-    
-    ; tuned delay loop 
-    LDX #200    ; 9600 baud on genuine 65c816 @ 10 Mhz 
+    TAY                                                  ; 2   2 
+    ; bild output data with carry flag in bit 0,
+    ; the rest is taken from stack parameter
+    LDA <3,S                                             ; 4   6
+    ROL                                                  ; 2   8
+    STA |0         ; write to output port                ; 4  12
     ; detect underlying hardware
-    CLC
-    XCE 
-    BCC delay2  
-    NOP
-    NOP
-    LDX #12; #18     ; fine-tuned to give same speed on Bernd €12 Mhz
+    CLC                                                  ; 2  14
+    XCE                                                  ; 2  16
+    BCC true65c816                         ; branch taken: 3  19
+berndemulation:
+    LDX #13                                              
+delay1:
+    DEX                                                  
+    BNE delay1
+    BRA donedelay
+true65c816:
+    LDX #4                                               ; 3  22
 delay2:
-    DEX        ; 2 cycles
-    BNE delay2 ; 3 cycles
-    
-    ; put input bit into carry flag
-    LSR
-    
-    ; repair A and return
-    TYA
-    RTS
-
-    ; Wait for about 1.5 bits.
-    ; This subroutine uses 8-bit registers.
-    LONGA OFF
-    LONGI OFF
-waitfor1_5bits:
-
-    LDX #13     ; fine-tuned to wait 1.5 bits on Bernd €12 Mhz
-    ; detect underlying hardware
-    CLC
-    XCE 
-    BCS delay3      
-    LDX #100   ; delay for one extra half bit 
-halfdelay:
-    DEX        ; 2 cycles
-    BNE halfdelay ; 3 cycles
-    LDX #250   ; 9600 baud on genuine 65c816 @ 10 Mhz 
-delay3:
-    DEX        ; 2 cycles
-    BNE delay2 ; 3 cycles
-    
-    RTS
+    NOP                                                  ; 2  24 34 44 54
+    BRA delay3cycles                                     ; 3  27 37 47 57
+delay3cycles:
+    DEX                                                  ; 2  29 39 49 59 
+    BNE delay2                                          ; 3/2 32 42 52 61
+donedelay:
+    NOP                                                  ; 2  63
+    NOP                                                  ; 2  65
+    LDA |0         ; fetch input                         ; 4  69
+    ASL A  ; put input bit into carry flag               ; 2  71
+    TYA    ; repair A and return                         ; 2  73
+    RTS                                                  ; 6  79
+    LONGA ON
 
 ; ----------- Simple convenience function --------------------    
+    ; stack layout:
+    ;   SP+1, SP+2, SP+3        return address
+    ;   SP+4, SP+5, SP+6, SP+7  pointer to string
 sendstr:
-	longa	on
-	longi	on
-	tsc
-	sec
-	sbc	#L42
-	tcs
-	phd
-	tcd
-str_0	set	4
-i_1	set	0
-	stz	<L43+i_1
-L10044:
-c_2	set	2
-	ldy	<L43+i_1
-	lda	[<L42+str_0],Y
-	and	#$ff
-	sta	<L43+c_2
-	lda	<L43+c_2
-	bne	L10045
-	lda	<L42+2
-	sta	<L42+2+4
-	lda	<L42+1
-	sta	<L42+1+4
-	pld
-	tsc
-	clc
-	adc	#L42+4
-	tcs
-	rtl
-L10045:
-	pei	<L43+c_2
-	jsl	send
-	inc	<L43+i_1
-	bra	L10044
-L42	equ	4
-L43	equ	1
-      
+    TSC
+    PHD
+    TCD
+sendstrloop:
+	LDA	[<4]
+    AND #$00FF
+    BEQ sendstrend
+    PHA
+    JSL send
+    INC <4
+    BNE sendstrloop
+    INC <6
+    BNE sendstrloop
+sendstrend: 
+    LDA <1
+    STA <5
+    LDA <2
+    STA <6
+    PLD
+    PLA
+    PLA
+    RTL 
         
 ; ---------------- Write to FLASH -------------------------
 ; This code must be mirrored to RAM before using it, because
@@ -380,7 +422,6 @@ writeflash:
     TSC
     PHD
     TCD
-        
     LDX <12
     BEQ writeflashdone
     LDY #0
@@ -406,7 +447,6 @@ waitflashstable:
     INY
     DEX
     BNE writeflashloop   
-    
 writeflashdone:
 	LDA	<1
     STA <11 
