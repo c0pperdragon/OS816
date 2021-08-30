@@ -147,9 +147,11 @@ void testmalloc(void)
 
 void testfileinput(void)
 {
-    FILE* f = fopen("x","rb");
+    FILE* f = fopen("x.txt","rb");
     char buffer[11];
-    int len = fread(buffer, 1,10, f);
+    int len;
+    if (!f) { printf("Can not open x.txt\n"); return; }
+    len =  fread(buffer, 1,10, f);
     test(len, 2);               // 17
     buffer[len]='\0';
     teststr(buffer, "ab");      // 18
@@ -225,6 +227,8 @@ void testfseek(void)
 // run suit of tests
 int main(int argc, char** argv)
 {    
+    printf("Running test suite...\n");
+    
     // test memory allocation
     testmalloc();
 

@@ -14,7 +14,7 @@ WDC816CC -ML -MV -MU -MK -MT -SO0S -WL -WP time.c
 WDC816CC -ML -MV -MU -MK -MT -SO0S -WL -WP romfile.c
 
 COPY %WDC_LIB%\cl.lib ..\bin\cl816.lib
-py erasesymbols.py ..\bin\cl816.lib malloc free calloc realloc strdup fread memcpy
-WDCLIB -A ..\bin\cl816.lib fixes.obj malloc.obj fcntl.obj time.obj romfile.obj
+py ..\tools\erasesymbols.py ..\bin\cl816.lib malloc free calloc realloc strdup fread memcpy
+WDCLIB -A ..\bin\cl816.lib fixes.obj malloc.obj fcntl.obj romfile.obj
 
 del *.obj

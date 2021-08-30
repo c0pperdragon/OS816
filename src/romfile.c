@@ -4,11 +4,10 @@
 #include "os816.h"
 #include "romfile.h"
 
-#define ROMFILESTART  ((char*)0x00810000)  // second bank of ROM
 #define ROMFILETAG    0x454C4946           // magic code "FILE"
 
 // Structure of the rom file system:
-// Beginning at ROMFILESTART, all files are stored sequentially:
+// Beginning at romFileStart, all files are stored sequentially:
 //     4 bytes          "FILE"
 //     4 bytes          total size of the rom file (including name and header)
 //     1 or more bytes  file name including an ending '\0' (empty string means deleted files)
@@ -44,6 +43,31 @@ int isflashempty(char* area, unsigned long size)
     return 1;
 }
 
+char *romFileStart(void)
+{
+    unsigned long top1;
+    unsigned long top2;
+    #asm
+        XREF _END_CODE
+        LDA #<_END_CODE
+        STA %%top1
+        LDA #^_END_CODE
+        STA %%top1+2
+        XREF _END_KDATA
+        LDA #<_END_KDATA
+        STA %%top2
+        LDA #^_END_KDATA
+        STA %%top2+2
+    #endasm
+    if (top2>top1) { top1=top2; }
+    return (char*) ((top1+0xFFF) & 0xFFFFF000);
+}
+
+char *romFileTop(void)
+{
+    return (char*) 0x88F000;
+}
+
 
 // ----------------- facility to read ROM files ----------------------------
 
@@ -70,7 +94,7 @@ RomReadFile *getOpenRomReadFile(int readfd)
 
 int romfile_openread(const char * name)
 {
-    char* img = ROMFILESTART;   
+    char* img = romFileStart();   
     RomReadFile* f;
     
     // try to find the rom image
@@ -230,23 +254,15 @@ int romfile_closewrite(int writefd)
     totalsize = 9 + namelength + f->size;
 
     // scan through files to find first unused position
-    for (img = ROMFILESTART; *((unsigned long*)img) == ROMFILETAG; )
+    for (img = romFileStart(); *((unsigned long*)img) == ROMFILETAG; )
     {
         unsigned long l = *((unsigned long*)(img+4));
         dummy=(unsigned long) img;
         img += l;
     }
     
-    // extract information about code segment start (which is end of file system area)
-    #asm
-        XREF _BEG_CODE
-        LDA #<_BEG_CODE
-        STA %%romfiletop
-        LDA #^_BEG_CODE
-        STA %%romfiletop+2
-    #endasm
     // check if there is enough empty space to store the file
-    if (img<ROMFILESTART || img+totalsize>romfiletop) { returncode=-1; goto release_all; }
+    if (img+totalsize>romFileTop()) { returncode=-1; goto release_all; }
     // check if flash area can be written to
     if (!isflashempty(img, totalsize)) { returncode=-1; goto release_all; }
     
@@ -320,7 +336,7 @@ unsigned int romfile_write(int writefd, void * buffer, unsigned int len)
 
 int romfile_delete(const char* name)
 {
-    char* img = ROMFILESTART;   
+    char* img = romFileStart();   
     char terminator = '\0';
     
     for (;;)

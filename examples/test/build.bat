@@ -1,4 +1,4 @@
 WDC816CC -ML -MV -MU -MK -MT -SO0S -WL -WP -I..\..\src test.c
-WDC816AS romfiles.asm
-WDCLN -HIE -D0,800000 -K808000 -C820000 test.obj romfiles.obj ..\..\bin\os816.obj -l..\..\bin\cl816
+WDCLN -HIE -D0,810004 -C811000 test.obj ..\..\bin\os816.obj -l..\..\bin\cl816
+py ..\..\tools\addfiles.py test.hex x.txt
 del *.obj

@@ -50,8 +50,8 @@ start:
     LDA #0
     STA >numbuffered  ;and also clear numconsumed
 
-    ; start the user (non-bootloader) program
-    JMP $80EFFC
+    ; start the user program
+    JMP $810000
 
 ; ------------------ RESTART or SHUTDOWN --------------------
 ; Let the machine restart or stop entirely 

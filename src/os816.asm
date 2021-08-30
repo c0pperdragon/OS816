@@ -23,7 +23,7 @@
 
     ; start vector on fixed address        
 LAUNCH SECTION
-    ORG $80EFFC
+    ORG $810000
     JMP >startmain
     ENDS
         
