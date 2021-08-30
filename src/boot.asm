@@ -10,10 +10,10 @@ numconsumed         set $00FFFF   ; 8 bit
 ; de-asserting the line again. 
 ; For true 65c816:
 ;    One timeout unit is 17 clocks, so a receive function call will
-;    cause an idle delay of about 500 microseconds.
+;    cause an idle delay of about 600 microseconds.
 ; For Bernd emulation:
 timeout1             set 244
-timeout2             set 50
+timeout2             set 102
 
 BOOT SECTION 
     ORG $80F000     
@@ -177,6 +177,7 @@ receive:
     ; save data bank register 
     PHB      
     ; switch to 8 bit accu/memory
+    LDA #0  ; make sure high byte is 0 from now on, so TAX and TAY work
     SEP #$20 
     longa off
     ; when there is unconsumed data left in buffer, no need to get more
@@ -195,19 +196,21 @@ receive:
     LDA #$FD      ; set RTS low
     STA |0
     ; Implement an edge-detector with latency jitter as low as possible.
-    ; Here the uncertainty is about 9 clocks which is just 0.1 bits
+    ; On real CPU the uncertainty is about 9 clocks which is just 0.1 bits
+    ; On Bernd the uncertainty is about 150 clocks (12.5us) which is nearly the
+    ; same relative jitter for a 9600 bit/s signal.
 state_RTS_active:
-    CLC           ; carry flag for timeout   ; 2
-    BIT |0                                   ; 4
-    BPL startbitdetected                     ; 2  2
-    LDA #256-timeout1                        ; 2
+    CLC           ; carry flag for timeout   
+    BIT |0                                   
+    BPL startbitdetected                       
+    LDA #256-timeout1                        
 waitforstartbit:
-    BIT |0                                   ; 4
-    BPL startbitdetected                     ; 2
-    ADC #1        ; progress timeout         ; 2
-    BIT |0                                   ; 4
-    BPL startbitdetected                     ; 2
-    BCC waitforstartbit                      ; 3
+    BIT |0                                   ; 4      (55) 
+    BPL startbitdetected                     ; 2      (21)
+    ADC #1        ; progress timeout         ; 2      (71)
+    BIT |0                                   ; 4      (55)
+    BPL startbitdetected                     ; 2  2   (21)
+    BCC waitforstartbit                      ; 3      (43)
 timeoutreached:
     BRA set_RTS_inactive
 startbitdetected:
@@ -218,7 +221,7 @@ startbitdetected:
     ; when buffer is not too full, keep RTS active
     LDA >numbuffered
     CMP #25
-    BPL state_RTS_active
+    BMI state_RTS_active
     ; set RTS high
 set_RTS_inactive:
     LDA #$FF      
@@ -258,6 +261,7 @@ donereceive:
     INC A
     STA >numconsumed       ; progress numconsumed counter
     LDA >buffereddata,X
+    LDY #0
     TAY                    ; 0-expand to 16 bit
 returnfromreceive:
     REP #$20 
