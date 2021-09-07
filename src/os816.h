@@ -4,6 +4,9 @@
 // Program entry point. Needs to be provided by the user program.
 int main(int argc, char** argv); 
 
+// Restart the system
+void softreset(void);
+
 // Tuned delay loop
 void sleep(unsigned int milliseconds);
 

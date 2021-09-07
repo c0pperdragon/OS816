@@ -8,13 +8,13 @@
     XREF ~~main
     
     ; linking to bootloader code
-    xdef ~~_exit
+    xdef ~~softreset
     xdef ~~sleep
     xdef ~~send
     xdef ~~receive
 	xdef ~~sendstr
     xdef ~~writeflash
-~~_exit      set $80F000
+~~softreset  set $80F000
 ~~sleep      set $80F004
 ~~send       set $80F008
 ~~receive    set $80F00C
@@ -80,6 +80,23 @@ argv:
     DW #^progname
     DW 0
     DW 0
-    
     ENDS 
+
+
+    xdef ~~_exit    
+    CODE
+~~_exit:
+; ------------------ RESTART or SHUTDOWN --------------------
+; Let the machine restart or stop entirely 
+; This depends on the exit-value. All negative values will cause a complete stop. 
+    ; initial stack layout:  
+    ;   SP+1, SP+2, SP+3    return address
+    ;   SP+4, SP+5          return value from main() or exit()
+    LDA <4,S
+    BPL wantreset
+    STP
+wantreset:
+    JMP >~~softreset    
+    ENDS
+    
     END

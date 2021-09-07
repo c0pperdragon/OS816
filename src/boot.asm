@@ -21,7 +21,7 @@ BOOT SECTION
     LONGI ON
     
 ; ------------ JUMP TABLE INTO THE BOOT LOADER CODE --------------    
-    JMP >exit                 ; 80F000
+    JMP >softreset            ; 80F000
     JMP >sleep                ; 80F004
     JMP >send                 ; 80F008 
     JMP >receive              ; 80F00C
@@ -29,13 +29,19 @@ BOOT SECTION
     JMP >writeflash_mirrored  ; 80F014
     
 ; -------------------- STARTUP -------------------------------
-start:
-     ;  ; set the output port to a defined state
-    LDA #$00FF
+softreset:
+    ; 16-bit mode for accu and index registers
+    ; clear all other status flags as well
+    REP #$FF   
+   
+    ; set the output port to a defined state
     SEP #$20 
-    STA >$400000
-    REP #$20
-    
+    LONGA OFF
+    LDA #$FF
+    STA >$7F0000
+    REP #$20 
+    LONGA ON
+            
     ; copy flash programming routines to the very top of RAM for later use   
     LDA #writeflashend-writeflash-1  ; length-1
     LDX #<writeflash            ; get source into X
@@ -45,24 +51,29 @@ start:
     ; initial stack pointer
     LDA #stacktop
     TCS 
-    
+    ; initial direct pointer  = 0
+    LDA #0
+    TCD
+    ; initial data bank register = 0
+    PHA
+    PLB
+    PLB
+
     ; initialize serial communication buffer
     LDA #0
     STA >numbuffered  ;and also clear numconsumed
-
+    
+    ; for genuine 65c816 add a small delay to stay clear of 
+    ; potential double resets at power up
+    CLC
+    XCE 
+    BCS skipstartupdelay
+    PEA #100
+    JSL sleep
+skipstartupdelay:
+    
     ; start the user program
     JMP $810000
-
-; ------------------ RESTART or SHUTDOWN --------------------
-; Let the machine restart or stop entirely 
-; This depends on the exit-value. All negative values will cause a complete stop. 
-exit:
-    ; initial stack layout:  
-    ;   SP+1, SP+2, SP+3    return address
-    ;   SP+4, SP+5          return value from main() or exit()
-    LDA <4,S
-    BPL start
-    STP
     
 ; ----------------- Tuned delay loop ----------------------
 sleep:
@@ -127,7 +138,7 @@ send:
     SEP #$20 
     longa off
     ; make IO address available via DBR
-    LDA #$40 
+    LDA #$7F 
     PHA
     PLB      
     ; must wait until the receiver is ready to accept new data (incomming CTS must be low)
@@ -189,7 +200,7 @@ receive:
     STA >numbuffered 
     STA >numconsumed 
     ; prepare accessing the io addresses
-    LDA #$40
+    LDA #$7F
     PHA
     PLB
     ; notify the sender that we are ready to accept data
@@ -481,7 +492,7 @@ TOHIGHBANK:               ; 80FFF4
     ; Bernd emulation will not use the reset vectors, but will directly jump to this
     ; location with emulation already turned off and all registers in 16bit mode
 BERND:                    ; 80FFF8
-    JMP >start
+    JMP >softreset
     ; The reset vector for the 65C816
 RESETVECTOR:              ; 80FFFC
     DW $FFF0
