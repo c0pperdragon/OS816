@@ -14,12 +14,14 @@
     xdef ~~receive
 	xdef ~~sendstr
     xdef ~~writeflash
+    xdef ~~eraseflash
 ~~softreset  set $80F000
 ~~sleep      set $80F004
 ~~send       set $80F008
 ~~receive    set $80F00C
 ~~sendstr    set $80F010
 ~~writeflash set $80F014
+~~eraseflash set $80F018
 
     ; start vector on fixed address        
 LAUNCH SECTION
@@ -74,7 +76,8 @@ nocopy:
     JSL ~~_exit
 
 progname:
-    DB 79,83,56,49,54,0  ; "OS816"
+    DB "OS816"
+    DB 0
 argv:
     DW #<progname
     DW #^progname

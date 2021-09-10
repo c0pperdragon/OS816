@@ -17,6 +17,7 @@ void sendstr(const char* str);
 
 // Facility to write to the flash area
 void writeflash(char* target, void* data, unsigned int size);
+void eraseflash(char* sectoraddress);
 
 // raw access to IO port
-#define IOPORT (*((unsigned char*)0x400000))
+#define IOPORT (*((unsigned char*)0x7F0000))

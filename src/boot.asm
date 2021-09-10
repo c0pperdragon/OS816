@@ -1,7 +1,6 @@
 
 ; --------------------- RAM layout ---------------------------- 
 stacktop            set $00FBFF   ; stay 1K clear of top to work around a bug in sprintf
-writeflash_mirrored set $00FF80   ; 96 byte
 buffereddata        set $00FFE0   ; 30 byte
 numbuffered         set $00FFFE   ; 8 bit
 numconsumed         set $00FFFF   ; 8 bit
@@ -20,16 +19,17 @@ BOOT SECTION
     LONGA ON
     LONGI ON
     
-; ------------ JUMP TABLE INTO THE BOOT LOADER CODE --------------    
-    JMP >softreset            ; 80F000
-    JMP >sleep                ; 80F004
-    JMP >send                 ; 80F008 
-    JMP >receive              ; 80F00C
-    JMP >sendstr              ; 80F010 
-    JMP >writeflash_mirrored  ; 80F014
+; ------------ JUMP TABLE INTO THE BOOT LOADER ROUTINES ---------    
+    JMP >~~softreset            ; 80F000
+    JMP >~~sleep                ; 80F004
+    JMP >~~send                 ; 80F008 
+    JMP >~~receive              ; 80F00C
+    JMP >~~sendstr              ; 80F010 
+    JMP >~~writeflash           ; 80F014
+    JMP >~~eraseflash           ; 80F018
     
 ; -------------------- STARTUP -------------------------------
-softreset:
+~~softreset:
     ; 16-bit mode for accu and index registers
     ; clear all other status flags as well
     REP #$FF   
@@ -42,12 +42,6 @@ softreset:
     REP #$20 
     LONGA ON
             
-    ; copy flash programming routines to the very top of RAM for later use   
-    LDA #writeflashend-writeflash-1  ; length-1
-    LDX #<writeflash            ; get source into X
-    LDY #<writeflash_mirrored   ; get dest into Y
-    MVN #^writeflash,#^writeflash_mirrored   ;copy bytes
-
     ; initial stack pointer
     LDA #stacktop
     TCS 
@@ -69,14 +63,14 @@ softreset:
     XCE 
     BCS skipstartupdelay
     PEA #100
-    JSL sleep
+    JSL ~~sleep
 skipstartupdelay:
     
     ; start the user program
     JMP $810000
     
 ; ----------------- Tuned delay loop ----------------------
-sleep:
+~~sleep:
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          16-bit parameter: milliseconds
@@ -128,7 +122,7 @@ done:                ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000
 ; are left high after that. 
 
     ; -- send one byte via serial
-send:
+~~send:
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          data to send (in lower bits only)
@@ -184,7 +178,7 @@ waitforready:
     RTL
   
     ; -- receive one byte via serial
-receive:
+~~receive:
     ; save data bank register 
     PHB      
     ; switch to 8 bit accu/memory
@@ -401,7 +395,7 @@ donedelay:
     ; stack layout:
     ;   SP+1, SP+2, SP+3        return address
     ;   SP+4, SP+5, SP+6, SP+7  pointer to string
-sendstr:
+~~sendstr:
     TSC
     PHD
     TCD
@@ -410,7 +404,7 @@ sendstrloop:
     AND #$00FF
     BEQ sendstrend
     PHA
-    JSL send
+    JSL ~~send
     INC <4
     BNE sendstrloop
     INC <6
@@ -426,57 +420,173 @@ sendstrend:
     RTL 
         
 ; ---------------- Write to FLASH -------------------------
-; This code must be mirrored to RAM before using it, because
-; ROM can not be accessed while programming is active
-writeflash:
-    ; stack layout (accessed via D):  
-    ;   SP+1, SP+2, SP+3          return address
-    ;   SP+4, SP+5, SP+6, SP+7    destination address
-    ;   SP+8, SP+9, SP+10, SP+11  source address
-    ;   SP+12, SP+13              length    
-    TSC
+~~writeflash:
+; stack frame (accessed via D):  
+;   D+1 - D+50                mirrored code    
+;   D+51, D+52                previous D 
+;   D+53, D+54, D+55          return address
+;   D+56, D+57, D+58, D+59    destination address
+;   D+60, D+61, D+62, D+63    source address
+;   D+64, D+65                length    
+    ; set up stack frame
     PHD
+    TSC
+    SEC
+    SBC #50
+    TCS
     TCD
-    LDX <12
-    BEQ writeflashdone
-    LDY #0
-writeflashloop:
-    SEP #$20
-	longa	off
-    LDA #$AA
-    STA >$805555
-    LDA #$55
-    STA >$802AAA
-    LDA #$A0
-    STA >$805555
-    LDA [<8],Y
-    STA [<4],Y
-waitflashstable:
-    LDA [<4],Y
-    CMP [<4],Y
-    BNE waitflashstable
-    CMP [<4],Y
-    BNE waitflashstable
-    REP #$20
-	longa	on
-    INY
+    ; transfer program to RAM
+    LDX #32
+transferaccesscode:
+    LDA >writebytetoflash,X
+    STA <1,X
     DEX
-    BNE writeflashloop   
-writeflashdone:
-	LDA	<1
-    STA <11 
-	LDA	<2
-    STA <12 
-    PLD
-    PLA
-    PLA
-    PLA
-    PLA
-    PLA
-    RTL	
-writeflashend:
+    DEX
+    BPL transferaccesscode    
+    ; init counters
+    LDY <64
+    BEQ skipcopyloop
+    ; use 8-bit accu/memory access during loop
+    SEP #$20
+    LONGA OFF
+writeflashloop:    
+    DEY
+    JSL executefromstackframe  
+    TYX
+    BNE writeflashloop
+    ; revert to 16 bit
+    REP #$20
+    LONGA ON
+skipcopyloop:
+    ; transfer return address to where it is needed
+    LDA <53
+    STA <63
+    LDA <54
+    STA <64
+    ; repair D, take down stack frame and return    
+    LDA <51
+    TCD
+    TSC 
+    CLC
+    ADC #62
+    TCS
+    RTL
+; This code needs to be mirrored to RAM before executing. 
+; parameters:
+;     Y  offset in source and the target buffer
+; D must point to the stack frame as specified by writeflash. 
+; Register widths A/M 8 bit, X/Y 16 bit
+; Invocation by far subroutine call
+writebytetoflash:
+    LONGA OFF
+    LDA #$AA                 ; 2
+    STA >$805555             ; 4
+    LDA #$55                 ; 2
+    STA >$802AAA             ; 4
+    LDA #$A0                 ; 2
+    STA >$805555             ; 4
+    LDA [<60],Y              ; 2
+    STA [<56],Y              ; 2
+waitflashstable:
+    LDA [<56],Y              ; 2
+    CMP [<56],Y              ; 2
+    BNE waitflashstable      ; 2
+    CMP [<56],Y              ; 2
+    BNE waitflashstable      ; 2
+    RTL                      ; 1
+    LONGA ON                 ; 33 bytes total 
 
+; ---------------- Erase to FLASH -------------------------
+~~eraseflash:
+; stack frame (accessed via D):  
+;   D+1 - D+50                mirrored code    
+;   D+51, D+52                previous D 
+;   D+53, D+54, D+55          return address
+;   D+56, D+57, D+58, D+59    sector address
+    ; set up stack frame
+    PHD
+    TSC
+    SEC
+    SBC #50
+    TCS
+    TCD
+    ; transfer program to RAM
+    LDX #44
+transfererasecode:
+    LDA >erasesector,X
+    STA <1,X
+    DEX
+    DEX
+    BPL transfererasecode    
+    ; use 8-bit accu/memory access for call
+    SEP #$20
+    LONGA OFF
+    ; execute erase code from RAM
+    JSL executefromstackframe  
+    ; revert to 16 bit
+    REP #$20
+    LONGA ON
+    ; transfer return address to where it is needed
+    LDA <53
+    STA <57
+    LDA <54
+    STA <58
+    ; repair D, take down stack frame and return    
+    LDA <51
+    TCD
+    TSC 
+    CLC
+    ADC #56
+    TCS
+    RTL
+; This code needs to be mirrored to RAM before executing. 
+; D must point to the stack frame as specified by eraseflash. 
+; Register widths A/M 8 bit, X/Y 16 bit
+; Invocation by far subroutine call
+erasesector:
+    LONGA OFF
+    LDA #$AA                 ; 2
+    STA >$805555             ; 4
+    LDA #$55                 ; 2
+    STA >$802AAA             ; 4
+    LDA #$80                 ; 2
+    STA >$805555             ; 4
+    LDA #$AA                 ; 2
+    STA >$805555             ; 4
+    LDA #$55                 ; 2
+    STA >$802AAA             ; 4
+    LDA #$30                 ; 2
+    STA [<56]                ; 2
+waiterasestable:
+    LDA [<56]                ; 2
+    CMP [<56]                ; 2
+    BNE waiterasestable      ; 2
+    CMP [<56]                ; 2
+    BNE waiterasestable      ; 2
+    RTL                      ; 1
+    LONGA ON                 ; 45 bytes total 
+
+
+; ------------------ JUMP TO CODE IN STACK ------------------------------------
+    ; Extremely tricky construction to jump to a code that is in the stack frame
+    ; at the location D+1 (in bank 0). We prepare a 24-bit pointer
+    ; on the stack to be jumped to with use of RTL. Due to a strange quirk in the 
+    ; JSL/RTL implementation, the resultant address is actually one higher than what
+    ; is taken from the stack, so we will hit D+1 perfectly.
+    ; To work correctly, the accu/memory length must be set to 8 bit, and
+    ; the accu will also be overwritten.
+    LONGA OFF
+executefromstackframe:
+    LDA #0
+    PHA
+    PHD
+    RTL
+    LONGA ON              
+
+    ENDS
+    
 ; ----------------- Reset code ----------------------------    
+RESET SECTION
     ; This is a very tricky startup code that needs to work with both
     ; the original 65c816 as well as the Bernd emulator.
    ORG $80FFF0
@@ -492,7 +602,7 @@ TOHIGHBANK:               ; 80FFF4
     ; Bernd emulation will not use the reset vectors, but will directly jump to this
     ; location with emulation already turned off and all registers in 16bit mode
 BERND:                    ; 80FFF8
-    JMP >softreset
+    JMP >~~softreset
     ; The reset vector for the 65C816
 RESETVECTOR:              ; 80FFFC
     DW $FFF0
