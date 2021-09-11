@@ -63,11 +63,6 @@ char *romFileStart(void)
     return (char*) ((top1+0xFFF) & 0xFFFFF000);
 }
 
-char *romFileTop(void)
-{
-    return (char*) 0x88F000;
-}
-
 
 // ----------------- facility to read ROM files ----------------------------
 
@@ -262,7 +257,7 @@ int romfile_closewrite(int writefd)
     }
     
     // check if there is enough empty space to store the file
-    if (img+totalsize>romFileTop()) { returncode=-1; goto release_all; }
+    if (img+totalsize>topaddress_flash()) { returncode=-1; goto release_all; }
     // check if flash area can be written to
     if (!isflashempty(img, totalsize)) { returncode=-1; goto release_all; }
     

@@ -27,6 +27,8 @@ BOOT SECTION
     JMP >~~sendstr              ; 80F010 
     JMP >~~writeflash           ; 80F014
     JMP >~~eraseflash           ; 80F018
+    JMP >~~topaddress_flash     ; 80F01C
+    JMP >~~topaddress_ram       ; 80F020
     
 ; -------------------- STARTUP -------------------------------
 ~~softreset:
@@ -566,7 +568,6 @@ waiterasestable:
     RTL                      ; 1
     LONGA ON                 ; 45 bytes total 
 
-
 ; ------------------ JUMP TO CODE IN STACK ------------------------------------
     ; Extremely tricky construction to jump to a code that is in the stack frame
     ; at the location D+1 (in bank 0). We prepare a 24-bit pointer
@@ -582,6 +583,19 @@ executefromstackframe:
     PHD
     RTL
     LONGA ON              
+
+; -------------------- MEMORY CONFIGURATION QUERY ----------------------------
+; User modifyable flash range (everything except boot loader) 
+; extends from $810000 to $88F000 (508KB)
+~~topaddress_flash:
+    LDX #$0088
+    LDA #$F000
+    RTL
+; RAM range is 512KB starting from 0
+~~topaddress_ram:
+    LDX #$0008
+    LDA #$0000
+    RTL
 
     ENDS
     

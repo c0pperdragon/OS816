@@ -15,13 +15,17 @@
 	xdef ~~sendstr
     xdef ~~writeflash
     xdef ~~eraseflash
-~~softreset  set $80F000
-~~sleep      set $80F004
-~~send       set $80F008
-~~receive    set $80F00C
-~~sendstr    set $80F010
-~~writeflash set $80F014
-~~eraseflash set $80F018
+    xdef ~~topaddress_flash
+    xdef ~~topaddress_ram
+~~softreset        set $80F000
+~~sleep            set $80F004
+~~send             set $80F008
+~~receive          set $80F00C
+~~sendstr          set $80F010
+~~writeflash       set $80F014
+~~eraseflash       set $80F018
+~~topaddress_flash set $80F01C
+~~topaddress_ram   set $80F020
 
     ; start vector on fixed address        
 LAUNCH SECTION

@@ -19,5 +19,9 @@ void sendstr(const char* str);
 void writeflash(char* target, void* data, unsigned int size);
 void eraseflash(char* sectoraddress);
 
+// Memory configuration queries
+void* topaddress_flash(void);
+void* topaddress_ram(void);
+
 // raw access to IO port
 #define IOPORT (*((unsigned char*)0x7F0000))

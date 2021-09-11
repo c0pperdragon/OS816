@@ -4,7 +4,6 @@
 #include "os816.h"
 
 #define HEAPSTART 0x010000
-#define HEAPEND   0x080000
 
 
 typedef struct FreeBlock {
@@ -17,39 +16,11 @@ typedef struct FreeBlock {
 char isheapinitialized = 0;
 FreeBlock *firstfree = 0;
 
-/*
-void sendfreememory(char* label, unsigned long size, unsigned long address)
-{
-    FreeBlock* f;
-    char buffer[100];
-    
-    sprintf (buffer, "%s %04x%04x at %04x%04x, then free:\n",
-        label,
-        (unsigned int)(size>>16),
-        (unsigned int)size,
-        (unsigned int)(address>>16),
-        (unsigned int)address
-    );
-    sendstr(buffer);
-    for (f=firstfree; f; f=f->next)
-    {
-        unsigned long s = f->length;
-        unsigned long a = (unsigned long) f;
-        sprintf (buffer, "    %04x%04x at %04x%04x\n",
-            (unsigned int)(s>>16),
-            (unsigned int)s,
-            (unsigned int)(a>>16),
-            (unsigned int)a
-        );
-        sendstr(buffer);
-    }
-}
-*/
 
 void initheap(void)
 {
     firstfree = (FreeBlock*) HEAPSTART;
-    firstfree->length = HEAPEND-HEAPSTART;
+    firstfree->length = ((unsigned long)topaddress_ram())-HEAPSTART;
     firstfree->next = 0;
     isheapinitialized = 1;    
 }    
