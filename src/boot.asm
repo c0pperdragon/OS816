@@ -1,4 +1,13 @@
 
+; -------------- interface with boot monitor program ------------
+    XREF ~~monitor
+    XDEF ~~send
+    XDEF ~~receive
+    XDEF ~~sendstr
+    XDEF ~~writeflash
+    XDEF ~~eraseflash
+    
+    
 ; --------------------- RAM layout ---------------------------- 
 stacktop            set $00FBFF   ; stay 1K clear of top to work around a bug in sprintf
 buffereddata        set $00FFE0   ; 30 byte
@@ -67,9 +76,36 @@ BOOT SECTION
     PEA #100
     JSL ~~sleep
 skipstartupdelay:
+
+    ; check incomming CTS signal to detect if there is a communication partner
+    ; present to receive start message
+    LDA >$7F0000
+    AND #$0040
+    BNE skipstartmessage
+    PEA #^startupmessage
+    PEA #<startupmessage
+    JSL ~~sendstr
+skipstartmessage:    
+    ; when there is no user program at all directly go to monitor
+    LDA >$810000
+    CMP #$FFFF
+    BEQ startmonitor
+    ; give some time to press key to enter monitor 
+    PEA #1000
+    JSL ~~sleep
+    ; check if some key was pressed in the meantime
+    JSL ~~receive
+    CMP #0
+    BPL startmonitor
+    ; start user program
+    JMP >$810000
+startmonitor
+    JMP >~~monitor
+
+startupmessage:
+    DB "OS816 1.0 - press any key to enter monitor."
+    DB 10,0
     
-    ; start the user program
-    JMP $810000
     
 ; ----------------- Tuned delay loop ----------------------
 ~~sleep:
@@ -498,7 +534,7 @@ waitflashstable:
     RTL                      ; 1
     LONGA ON                 ; 33 bytes total 
 
-; ---------------- Erase to FLASH -------------------------
+; ---------------- Erase FLASH sector ---------------------
 ~~eraseflash:
 ; stack frame (accessed via D):  
 ;   D+1 - D+50                mirrored code    
@@ -512,6 +548,16 @@ waitflashstable:
     SBC #50
     TCS
     TCD
+    ; test if sector actually needs erasing
+    LDA #$FFFF
+    LDY #4096-2
+checkerasedloop:
+    AND [<56],Y
+    DEY
+    DEY
+    BPL checkerasedloop    
+    CMP #$FFFF
+    BEQ aftererase
     ; transfer program to RAM
     LDX #44
 transfererasecode:
@@ -528,6 +574,7 @@ transfererasecode:
     ; revert to 16 bit
     REP #$20
     LONGA ON
+aftererase:
     ; transfer return address to where it is needed
     LDA <53
     STA <57
