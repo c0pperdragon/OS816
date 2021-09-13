@@ -100,7 +100,8 @@ skipstartmessage:
     ; start user program
     JMP >$810000
 startmonitor
-    JMP >~~monitor
+    JSL >~~monitor
+    JMP >~~softreset
 
 startupmessage:
     DB "OS816 1.0 - press any key to enter monitor."

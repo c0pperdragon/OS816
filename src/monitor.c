@@ -1,12 +1,13 @@
 #include "os816.h"
 
 // Small monitor program to read/modify the memory, reprogram the flash and 
-// exectue code.
+// execute code.
 
 
 void receiveline(char* buffer, int buffersize)
 {
     int len = 0;
+    buffer[0] = '\0';
     send ('>');
     for (;;)
     {
@@ -16,18 +17,19 @@ void receiveline(char* buffer, int buffersize)
             if (c>='a' && c<='z') { c = c - 'a' + 'A'; }
             buffer[len] = (char) c;
             len++;
-            send(c);
+            buffer[len] = '\0';
+            if (buffer[0]!=':') { send(c); }
         }
         else if (c=='\n' || c=='\r')
         {            
-            buffer[len] = '\0';
-            send('\n');            
+            if (buffer[0]!=':') { send('\n'); }            
             return; 
         }
         else if (c=='\b' && len>0)
         {
             len--;
-            sendstr("\b\033[0K");
+            buffer[len] = '\0';
+            if (buffer[0]!=':') { sendstr("\b\033[0K"); }
         }
     }
 }
@@ -117,8 +119,9 @@ void processline(char* line, unsigned int* hexoffset)
         sendstr("W <addr> <data>    Write to memory\n");
         sendstr("C <addr>           Call program\n");
         sendstr("E <sectoraddress>  Erase 4K flash sector\n");
-        sendstr("X                  Erase all user flash\n");        
+        sendstr("!                  Erase all user flash\n");        
         sendstr(":<intelhex>        Reprogram flash\n");        
+        sendstr("X or Q             Exit monitor and reboot\n");                
     }
     else if (cmd=='M') {         // MEMORY DUMP
         skiptospace(line, &cursor);
@@ -166,7 +169,7 @@ void processline(char* line, unsigned int* hexoffset)
         }
         eraseflash((void*)address);
     }
-    else if (cmd=='X') {         // ERASE ALL USER FLASH
+    else if (cmd=='!') {         // ERASE ALL USER FLASH
         for (address=0x810000; address<0x88F000; address += 0x1000) {
             eraseflash((void*)address);
         }
@@ -177,10 +180,7 @@ void processline(char* line, unsigned int* hexoffset)
         numbytes = (unsigned int) parsenumber(line, &cursor, 2);
         address = parsenumber(line, &cursor, 4);
         cmd = (unsigned int) parsenumber(line, &cursor, 2);
-        if (cmd==2 && numbytes==2) {     // set the offset
-            *hexoffset = (unsigned int) parsenumber(line, &cursor, 4);
-        }
-        else if (cmd==0 && numbytes<=64) { // write actual data
+        if (cmd==0 && numbytes<=64) { // write actual data
             unsigned char buffer[64];
             unsigned long target = *hexoffset;
             target += target;
@@ -197,6 +197,13 @@ void processline(char* line, unsigned int* hexoffset)
             }
             writeflash((char*)target, buffer, numbytes);
         }
+        else if (cmd==1)
+        {
+            sendstr("END\n");
+        }
+        else if (cmd==2 && numbytes==2) {     // set the offset
+            *hexoffset = (unsigned int) parsenumber(line, &cursor, 4);
+        }
         else {
             sendstr("UNSUPPORTED HEX COMMAND\n");
         }
@@ -204,7 +211,7 @@ void processline(char* line, unsigned int* hexoffset)
     else {
         sendstr("UNKNOWN COMMAND\n");
     }
- }
+}
 
 void monitor(void)
 {
@@ -215,7 +222,7 @@ void monitor(void)
     for (;;)
     {
         receiveline(line,200);
+        if (line[0]=='Q' || line[0]=='X') { return; }
         if (line[0]) { processline(line, &hexoffset); }
     }    
 }
-
