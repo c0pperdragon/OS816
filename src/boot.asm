@@ -10,7 +10,7 @@
     
 ; --------------------- RAM layout ---------------------------- 
 stacktop            set $00FBFF   ; stay 1K clear of top to work around a bug in sprintf
-buffereddata        set $00FFE0   ; 30 byte
+buffereddata        set $00FF00   ; 254 bytes
 numbuffered         set $00FFFE   ; 8 bit
 numconsumed         set $00FFFF   ; 8 bit
 
@@ -19,9 +19,9 @@ numconsumed         set $00FFFF   ; 8 bit
 ; For true 65c816:
 ;    One timeout unit is 17 clocks, so a receive function call will
 ;    cause an idle delay of about 600 microseconds.
-; For Bernd emulation:
 timeout1             set 244
 timeout2             set 102
+; For Bernd emulation use same values, even if the timeout would be higher than necessary
 
 BOOT SECTION 
     ORG $80F000     
@@ -227,7 +227,7 @@ waitforready:
     ; when there is unconsumed data left in buffer, no need to get more
     LDA >numconsumed
     CMP >numbuffered
-    BMI donereceive
+    BCC donereceive
     ; completely reset buffer
     LDA #0
     STA >numbuffered 
@@ -241,8 +241,8 @@ waitforready:
     STA |0
     ; Implement an edge-detector with latency jitter as low as possible.
     ; On real CPU the uncertainty is about 9 clocks which is just 0.1 bits
-    ; On Bernd the uncertainty is about 150 clocks (12.5us) which is nearly the
-    ; same relative jitter for a 9600 bit/s signal.
+    ; On Bernd the uncertainty is about 150 clocks (12.5us) which is a higher
+    ; relative jitter for a 19200 bit/s signal, but maybe OK as well.
 state_RTS_active:
     CLC           ; carry flag for timeout   
     BIT |0                                   
@@ -264,14 +264,14 @@ startbitdetected:
     PLA
     ; when buffer is not too full, keep RTS active
     LDA >numbuffered
-    CMP #25
-    BMI state_RTS_active
+    CMP #200
+    BNE state_RTS_active
     ; set RTS high
 set_RTS_inactive:
     LDA #$FF      
     STA |0
     ; second implementation of the edge-detector. this is used
-    ; in the state state when RTS is already de-asserted.
+    ; in the state when RTS is already de-asserted.
     ; Then the sender should stop as soon as possible. but may
     ; send a few more bytes.
 state_RTS_inactive:
@@ -327,18 +327,14 @@ receiveandstorebyte:
     XCE                                                  ; 2  17
     BCC true65c816_2                       ; branch taken: 3  20
 berndemulation_2:
-    LDX #6                                              
-delay4:
-    DEX                                                  
-    BNE delay4
     BRA startreceivebyte
 true65c816_2:
     LDX #7                                               ; 3  23
 delay5: 
     DEX                                                  ; 2  25 30 35 40 45   
     BNE delay5                                          ; 2/3 28 33 38 43 47  
-startreceivebyte:
     NOP                                                  ; 2  49
+startreceivebyte:
     ; pass down the pattern for other output bits 
     LDA <3,S                                             ; 4  53
     PHA                                                  ; 3  56
@@ -368,8 +364,8 @@ startreceivebyte:
     PLA
     ; store the data if there is space left
     LDA >numbuffered
-    CMP #30
-    BPL receiveandstoredone
+    CMP #254
+    BEQ receiveandstoredone
     TAX
     INC A
     STA >numbuffered
@@ -377,7 +373,7 @@ startreceivebyte:
     STA >buffereddata,X
 receiveandstoredone:
     ; wait until input reaches idle level
-    ; (either from stop bit, or when last data bit was high)
+    ; (either from stop bit, or when last data bit is high)
     BIT |0                                  
     BPL receiveandstoredone                   
     RTS
@@ -408,7 +404,15 @@ sendreceivebit:
     XCE                                                  ; 2  16
     BCC true65c816                         ; branch taken: 3  19
 berndemulation:
-    LDX #13                                              
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    LDX #1  
 delay1:
     DEX                                                  
     BNE delay1

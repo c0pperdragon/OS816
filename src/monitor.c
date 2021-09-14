@@ -27,9 +27,9 @@ void receiveline(char* buffer, int buffersize)
         }
         else if (c=='\b' && len>0)
         {
+            if (buffer[0]!=':') { sendstr("\b\033[0K"); }
             len--;
             buffer[len] = '\0';
-            if (buffer[0]!=':') { sendstr("\b\033[0K"); }
         }
     }
 }
@@ -175,13 +175,31 @@ void processline(char* line, unsigned int* hexoffset)
         }
     }
     else if (cmd==':') {         // Intel hex to write to flash
+        unsigned char buffer[101];
+        unsigned int checksum = 0;
         cursor++;
         skipoverspace(line, &cursor);
         numbytes = (unsigned int) parsenumber(line, &cursor, 2);
+        if (numbytes>100) {
+            sendstr("\nTOO LONG\n");
+            return;
+        }
+        checksum += numbytes;
         address = parsenumber(line, &cursor, 4);
+        checksum += (unsigned int)address;
+        checksum += ((unsigned int)address)>>8;
         cmd = (unsigned int) parsenumber(line, &cursor, 2);
-        if (cmd==0 && numbytes<=64) { // write actual data
-            unsigned char buffer[64];
+        checksum += cmd;
+        for (i=0; i<=numbytes; i++) { 
+            unsigned int b = parsenumber(line, &cursor, 2);
+            buffer[i] = b;
+            checksum += b;
+        }
+        if ((checksum & 0xFF)!=0) {
+            sendstr("\nCHECKSUM\n");
+            return;
+        }
+        if (cmd==0) { // write actual data
             unsigned long target = *hexoffset;
             target += target;
             target += target;
@@ -189,23 +207,20 @@ void processline(char* line, unsigned int* hexoffset)
             target += target;
             target = 0x800000 + target + address;
             if (target<0x810000 || target+numbytes>0x88F000) {
-                sendstr("OUT OF RANGE\n");
+                sendstr("\nOUT OF RANGE\n");
                 return;
-            }
-            for (i=0; i<numbytes; i++) { 
-                buffer[i] = parsenumber(line, &cursor, 2);
             }
             writeflash((char*)target, buffer, numbytes);
         }
-        else if (cmd==1)
+        else if (cmd==1)             // end of HEX file
         {
-            sendstr("END\n");
+            sendstr("\nEND\n");
         }
-        else if (cmd==2 && numbytes==2) {     // set the offset
-            *hexoffset = (unsigned int) parsenumber(line, &cursor, 4);
+        else if (cmd==2 && numbytes==2) {    // set the offset
+            *hexoffset = (((unsigned int) buffer[0])<<8) + buffer[1];
         }
         else {
-            sendstr("UNSUPPORTED HEX COMMAND\n");
+            sendstr("\nUNSUPPORTED HEX COMMAND\n");
         }
     }
     else {

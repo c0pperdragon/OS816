@@ -4,7 +4,7 @@ del ..\bin\*.hex
 
 WDC816AS boot.asm
 WDC816CC -ML -MV -MU -MK -MT -SO0S -WL -WP monitor.c
-WDCLN -HIE -C80F500 boot.obj monitor.obj -O ..\bin\boot.hex
+WDCLN -HIE -C80F400 boot.obj monitor.obj -O ..\bin\boot.hex
 
 WDC816AS os816.asm -O..\bin\os816.obj
 
