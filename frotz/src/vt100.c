@@ -6,11 +6,30 @@
 char* storyfilename = "";
 int currentstyle;
 
+int fileexists(const char* name)
+{
+    FILE *f = fopen(name, "rb");
+    if (!f) { return 0; }
+    fclose(f);
+    return 1;
+}
 
-void read_line_with_echo(char* buffer, int bsize)
+void read_line_with_echo(char* buffer, int bsize, const char* preset)
 {
     int l = 0;
     int c;
+    int i;
+    
+    for (i=0; preset && preset[i] && l+1<bsize; i++)
+    {   
+        c = preset[i];
+        if (c>=32 && c<=126) 
+        {
+            buffer[l] = c;
+            l++;
+            putchar (c);            
+        }
+    }
     for (;;)
     {
     	c = getchar();
@@ -27,7 +46,7 @@ void read_line_with_echo(char* buffer, int bsize)
                 printf("\b\033[0K");
             }	
         }
-        else if (l+1<bsize && c>=32 && c<=255) 
+        else if (l+1<bsize && c>=32 && c<=126) 
         {
             buffer[l] = c;
             l++;
@@ -154,7 +173,7 @@ void os_more_prompt(void)
 zchar os_read_line(int max, zchar *buf, int timeout, int width, int continued) 
 {  
     os_set_text_style(NORMAL_STYLE);
-    read_line_with_echo(buf,max);
+    read_line_with_echo(buf,max, 0);
     return ZC_RETURN; 
 }
 
@@ -174,15 +193,38 @@ int os_font_data(int font, int *height, int *width)
 	return 0;
 }
 
-
-char *os_read_file_name (const char *default_name, int flag)
+char *os_read_file_name (const char *default_name, int filetype)
 {
-    char x[100];    
-    strcpy (x,"story.sav");
-    printf("FILENAME: '%s'\n", x);
+    char x[110];    
+    char* ext;
+    switch (filetype) 
+    {
+        case FILE_RESTORE:  printf("Restore state from file"); ext=".sav"; break;
+        case FILE_SAVE:     printf("Save state to file"); ext=".sav"; break;
+        case FILE_SCRIPT:   printf("Write transcript to file"); ext=".txt"; break;
+        case FILE_PLAYBACK: printf("Play back commands from file"); ext=".log"; break;
+        case FILE_RECORD:   printf("Record commands to file"); ext=".log"; break;
+        case FILE_LOAD_AUX: printf("Auxilary file load"); ext=".aux"; break;
+        case FILE_SAVE_AUX: printf("Auxilary file save"); ext=".aux"; break;
+        default:            printf("Unspecified file"); ext=""; break;
+    }
+    if (!default_name)
+    {
+        char *dot;
+        strcpy (x, storyfilename);
+        dot = strstr(x, ".");
+        if (dot) 
+        {
+            strcpy (dot, ext);
+            default_name = x;
+        }
+    }
+
+    printf(": ");
+    read_line_with_echo(x, 100, default_name);
+    printf("\n");
     return strdup(x); 
 }
-
 
 void os_restart_game(int code) 
 {
@@ -191,7 +233,7 @@ void os_restart_game(int code)
 
 void os_process_arguments(int argc, char *argv[]) 
 {
-    char buffer[50];
+    char buffer[110];
     if (argc>1) 
     {
         storyfilename=argv[1]; 
@@ -199,8 +241,19 @@ void os_process_arguments(int argc, char *argv[])
     else
     {
         printf("Which story do you want to load? ");
-        read_line_with_echo(buffer,50);
+        read_line_with_echo(buffer,100,0);
         putchar('\n');
+        // if file does not exist try to guess an extension
+        if (!fileexists(buffer))
+        {
+            int l = strlen(buffer);
+            strcpy (buffer+l, ".z3");
+            if (!fileexists(buffer)) 
+            {
+                strcpy (buffer+l, ".z5");
+                if (!fileexists(buffer)) { strcpy(buffer+l, ""); }
+            }
+        }        
         storyfilename=strdup(buffer);
     }
 }

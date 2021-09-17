@@ -47,21 +47,27 @@ void *longalloc(unsigned long payloadsize)
             }
             else
             {
-                // need to split off free block for the remaining part       
-                FreeBlock* fragment = (FreeBlock*) ( ((unsigned long) f) + length );
-                fragment->length = remaining; 
-                fragment->next = f->next;  // replace in list, part 1
-                *fowner = fragment;        // replace in list, part 2 
+                // split block off either from front or back part, depending on size of allocation
+                if (payloadsize<=1024) 
+                {  // small blocks are taken from front
+                    FreeBlock* fragment = (FreeBlock*) ( ((unsigned long) f) + length );
+                    fragment->length = remaining; 
+                    fragment->next = f->next;  // replace in list, part 1
+                    *fowner = fragment;        // replace in list, part 2 
+                }
+                else                  
+                {   // large parts are taken from the end
+                    f->length = remaining;      // shrink existing free block
+                    f = (FreeBlock*) ( ((unsigned long) f) + remaining ); 
+                }
                 // allocated block gets new length
                 f->length = length;
             }
-//sendfreememory("A",length,(unsigned long)f);
             return (void*) (((unsigned long)f) + 4);  
         }
         fowner = (FreeBlock**) (((unsigned long)f) + 4);
     }
     // nothing suitable found
-//sendfreememory("X",length,(unsigned long)0);
     return 0;
 }
 

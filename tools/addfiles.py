@@ -71,6 +71,11 @@ def firstfree(data):
     print("Cannot determine end of code range")
     return 0x10000
 
+def injectbyte(rom,pos,b):
+    if pos<0x10000 or pos>=0x8FC00:
+        raise IndexError
+    rom[pos & 0x7FFFF] = b
+
 def inject(rom, pos, filename, data):
     header = [0x46, 0x49, 0x4C, 0x45, 0,0,0,0] + [ord(c) & 0xff for c in filename] + [0]
     l = len(header) + len(data)
@@ -79,9 +84,9 @@ def inject(rom, pos, filename, data):
     header[6] = (l>>16)&0xff
     header[7] = (l>>24)&0xff
     for i in range(len(header)):
-        rom[pos+i] = header[i]
+        injectbyte(rom,pos+i,header[i])
     for i in range(len(data)):
-        rom[pos+len(header)+i] = data[i]
+        injectbyte(rom,pos+len(header)+i,data[i])
     return pos+l
 
 def trimfolder(filename):

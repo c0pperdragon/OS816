@@ -90,48 +90,46 @@ void *memcpy(void* destination, const void* source, unsigned int len)
         longa on
     #endasm      
     }
-    // Burst version using the MVN instruction
+    // For longer transfer may utilize the MVN
     else
     {
-        unsigned int daddress = ((unsigned int *)(&destination)) [0];
-        unsigned int dbank = ((unsigned int *)(&destination)) [1];
-        unsigned int saddress = ((unsigned int *)(&source)) [0];
-        unsigned int sbank = ((unsigned int *)(&source)) [1];        
-        
-        for (;;)
+        // compute how many bytes could be copied without crossing a bank boundary
+        unsigned int dadr16 = (unsigned int)(unsigned long) destination;
+        unsigned int sadr16 = (unsigned int)(unsigned long) source;
+        unsigned int maxspan = ( ~( (dadr16>sadr16) ? dadr16 : sadr16 ) ) + 1;   // if 0, this means actually 65536
+
+        // Can use a single MVN when no bank boundaries are crossed
+        if (maxspan==0 || len<=maxspan)
         {
-            unsigned int span;
-            unsigned int span_m_1 = len - 1;
-            unsigned int dremain_m_1 = 65535-daddress;
-            unsigned int sremain_m_1 = 65535-saddress;
-            if (dremain_m_1 < span_m_1) { span_m_1 = dremain_m_1; }
-            if (sremain_m_1 < span_m_1) { span_m_1 = sremain_m_1; }
         #asm
             ; prepare MVN instructions with destination and source bank
             SEP #$20    
             longa off
-            LDA %%dbank
+            LDA %%destination+2
             STA %%mvn+1
-            LDA %%sbank
+            LDA %%source+2
             STA %%mvn+2
             REP #$20    
             longa on
             ; load positions and counters
-            LDY %%daddress
-            LDX %%saddress
-            LDA %%span_m_1
+            LDY %%destination
+            LDX %%source
+            LDA %%len
+            DEC A
             ; perform the MVN while retaining data bank register
             PHB
             JSL %%mvn
             PLB
         #endasm       
-            span = span_m_1 + 1;
-            if (span==len) { break; }
-            len -= span;
-            daddress += span;
-            if (daddress==0) { dbank++; }
-            saddress += span;
-            if (saddress==0) { sbank++; }
+        }
+        // when crossing bank boundaries, must split operation
+        else
+        {
+            memcpy(destination, source, maxspan);
+            memcpy(
+                (void*) (((unsigned long)destination) + maxspan),
+                (void*) (((unsigned long)source) + maxspan), 
+                len-maxspan);         
         }
     }
     return destination;
