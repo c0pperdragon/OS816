@@ -39,19 +39,18 @@ startmain:
     LONGA ON
     LONGI ON
 
-    ; set D register to the bank of UDATA
-    LDA #^_BEG_UDATA
-    TCD
-
     ; clear UDATA segment
     LDA #_END_UDATA-_BEG_UDATA ; number of bytes to clear
+    BEQ noclear    
+    SEP #$20     ; for 8-bit memory access
+    LONGA OFF
+    LDA #0
+    STA >_BEG_UDATA
+    REP #$20  
+    LONGA ON
+    LDA #_END_UDATA-_BEG_UDATA-1 ; number of bytes to replicate
     BEQ noclear
     LDX #<_BEG_UDATA  
-    SEP #$20     ; for 8-bit memory access
-    STZ <0,X     ; clear first byte
-    REP #$20  
-    DEA     
-    BEQ noclear
     TXY   ; set up copy instruction for forward replication
     INY
     DEA  

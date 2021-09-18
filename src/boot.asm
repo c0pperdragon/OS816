@@ -115,7 +115,7 @@ startupmessage:
     
     ; normally this loop is fine-tuned to take 10000 clocks per iteration
     ; (one-time method call overhead can not be avoided) 
-    LDY #1998    
+    LDY #2398    
     ; check if the code is running on a true 65c816 - use cycle-exact timing
     CLC
     XCE 
@@ -134,7 +134,7 @@ continue2:
     BNE continue2    ;   2 or 3 (if taken) cycles
     DEC A            ; 2 cycles
     BNE continue     ; 2 or 3 (if taken) cycles
-done:                ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000                     
+done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000                     
     ; take down parameters, fix return address and return
     LDA <2,S
     STA <4,S
@@ -239,7 +239,7 @@ waitforready:
     LDA #$FD      ; set RTS low
     STA |0
     ; Implement an edge-detector with latency jitter as low as possible.
-    ; On real CPU the uncertainty is about 9 clocks which is just 0.1 bits
+    ; On real CPU the uncertainty is about 9 clocks which is below 0.1 bits
     ; On Bernd the uncertainty is about 150 clocks (12.5us) which is a higher
     ; relative jitter for a 19200 bit/s signal, but maybe OK as well.
 state_RTS_active:
@@ -317,7 +317,7 @@ returnfromreceive:
     ; routine will terminate as quickly as possible but only
     ; after input level is inactive (high) again.
     ; With 0 - 9 clocks jitter, need to do the first sampling at
-    ; 130 clocks after the flank of the start bit
+    ; 152 clocks after the flank of the start bit
 receiveandstorebyte:  
     LONGA OFF                                            ;    13
     ; add some delay to get the first bit sample point correct
@@ -328,20 +328,21 @@ receiveandstorebyte:
 berndemulation_2:
     BRA startreceivebyte
 true65c816_2:
-    LDX #7                                               ; 3  23
+    LDX #6                                               ; 3  23
 delay5: 
-    DEX                                                  ; 2  25 30 35 40 45   
-    BNE delay5                                          ; 2/3 28 33 38 43 47  
-    NOP                                                  ; 2  49
+    DEX                                                  ; 2  25 30 35 40 45 50 
+    BNE delay5                                          ; 2/3 28 33 38 43 48 52 
+    NOP                                                  ; 2  54
+    NOP                                                  ; 2  56
 startreceivebyte:
     ; pass down the pattern for other output bits 
-    LDA <3,S                                             ; 4  53
-    PHA                                                  ; 3  56
+    LDA <3,S                                             ; 4  60
+    PHA                                                  ; 3  63
     ; prepare outgoing TX bits to be all idle
-    LDA #$FF                                             ; 2  58
-    SEC                                                  ; 2  60    
+    LDA #$FF                                             ; 2  65
+    SEC                                                  ; 2  67   
     ; transfer
-    JSR sendreceivebit ; bit 0                           ; 70 130
+    JSR sendreceivebit ; bit 0                           ; 85 152
     ROR A       
     JSR sendreceivebit ; bit 1
     ROR A       
@@ -385,11 +386,12 @@ receiveandstoredone:
     ; This subroutine uses 8-bit accu/memory. Calling is done with near JSR.
     ; The other bits for output port are taken from the stake (just above return address).
     ; For real 86c816:
-    ;   To get the 115200 baud with 10 Mhz clock, each bits needs to take about
-    ;   87 clocks. With 8 clocks used by the caller, this function is tuned to 
-    ;   consume exactly 79 clocks.
-    ;   Sampling the input bit is done at about 70 clocks after the call.
+    ;   To get the 115200 baud with 12 Mhz clock, each bits needs to take about
+    ;   104 clocks. With 8 clocks used by the caller, this function is tuned to 
+    ;   consume 96 clocks.
+    ;   Sampling the input bit is done at about 85 clocks after the call.
     ; For Bernd emulation:
+    ;   Speed tuned by measurement
     LONGA OFF
 sendreceivebit:
     TAY                                                  ; 2   2 
@@ -417,20 +419,24 @@ delay1:
     BNE delay1
     BRA donedelay
 true65c816:
-    LDX #4                                               ; 3  22
+    LDX #5                                               ; 3  22
 delay2:
-    NOP                                                  ; 2  24 34 44 54
-    BRA delay3cycles                                     ; 3  27 37 47 57
+    NOP                                                  ; 2  24 34 44 54 64 
+    BRA delay3cycles                                     ; 3  27 37 47 57 67 
 delay3cycles:
-    DEX                                                  ; 2  29 39 49 59 
-    BNE delay2                                          ; 3/2 32 42 52 61
+    DEX                                                  ; 2  29 39 49 59 69 
+    BNE delay2                                          ; 3/2 32 42 52 62 71
 donedelay:
-    NOP                                                  ; 2  63
-    NOP                                                  ; 2  65
-    LDA |0         ; fetch input                         ; 4  69
-    ASL A  ; put input bit into carry flag               ; 2  71
-    TYA    ; repair A and return                         ; 2  73
-    RTS                                                  ; 6  79
+    NOP                                                  ; 2  73
+    NOP                                                  ; 2  75
+    NOP                                                  ; 2  77
+    NOP                                                  ; 2  79
+    BRA delay3cycles2                                    ; 3  82 
+delay3cycles2:
+    LDA |0         ; fetch input                         ; 4  86
+    ASL A  ; put input bit into carry flag               ; 2  88
+    TYA    ; repair A and return                         ; 2  90
+    RTS                                                  ; 6  96
     LONGA ON
 
 ; ----------- Simple convenience function --------------------    
