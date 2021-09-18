@@ -163,14 +163,14 @@ void processline(char* line, unsigned int* hexoffset)
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6) & 0xFFFFF000;
-        if (address<0x810000 || address>=0x88F000) {
+        if (address<0x800000 || address>=0x87F000) {
             sendstr("OUT OF RANGE\n");
             return;
         }
         eraseflash((void*)address);
     }
     else if (cmd=='!') {         // ERASE ALL USER FLASH
-        for (address=0x810000; address<0x88F000; address += 0x1000) {
+        for (address=0x800000; address<0x87F000; address += 0x1000) {
             eraseflash((void*)address);
         }
     }
@@ -206,7 +206,7 @@ void processline(char* line, unsigned int* hexoffset)
             target += target;
             target += target;
             target = 0x800000 + target + address;
-            if (target<0x810000 || target+numbytes>0x88F000) {
+            if (target<0x800000 || target+numbytes>0x87F000) {
                 sendstr("\nOUT OF RANGE\n");
                 return;
             }

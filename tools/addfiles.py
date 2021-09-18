@@ -65,16 +65,16 @@ def writehexfile(filename, data):
     f.close()
     
 def firstfree(data):
-    for i in range(len(data)-1, 0x1000, -1):
+    for i in range(len(data)-1, 0x0000, -1):
         if data[i]!=None:
             return i+1
     print("Cannot determine end of code range")
-    return 0x10000
+    return 0x00000
 
 def injectbyte(rom,pos,b):
-    if pos<0x10000 or pos>=0x8FC00:
+    if pos<0x00000 or pos>=0x7FC00:
         raise IndexError
-    rom[pos & 0x7FFFF] = b
+    rom[pos] = b
 
 def inject(rom, pos, filename, data):
     header = [0x46, 0x49, 0x4C, 0x45, 0,0,0,0] + [ord(c) & 0xff for c in filename] + [0]

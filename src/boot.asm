@@ -23,21 +23,20 @@ timeout1             set 244
 timeout2             set 102
 ; For Bernd emulation use same values, even if the timeout would be higher than necessary
 
-BOOT SECTION 
-    ORG $80F000     
+BOOT SECTION        ; needs to be located at $FFF000
     LONGA ON
     LONGI ON
     
 ; ------------ JUMP TABLE INTO THE BOOT LOADER ROUTINES ---------    
-    JMP >~~softreset            ; 80F000
-    JMP >~~sleep                ; 80F004
-    JMP >~~send                 ; 80F008 
-    JMP >~~receive              ; 80F00C
-    JMP >~~sendstr              ; 80F010 
-    JMP >~~writeflash           ; 80F014
-    JMP >~~eraseflash           ; 80F018
-    JMP >~~topaddress_flash     ; 80F01C
-    JMP >~~topaddress_ram       ; 80F020
+    JMP >~~softreset            ; FFF000
+    JMP >~~sleep                ; FFF004
+    JMP >~~send                 ; FFF008 
+    JMP >~~receive              ; FFF00C
+    JMP >~~sendstr              ; FFF010 
+    JMP >~~writeflash           ; FFF014
+    JMP >~~eraseflash           ; FFF018
+    JMP >~~topaddress_flash     ; FFF01C
+    JMP >~~topaddress_ram       ; FFF020
     
 ; -------------------- STARTUP -------------------------------
 ~~softreset:
@@ -87,7 +86,7 @@ skipstartupdelay:
     JSL ~~sendstr
 skipstartmessage:    
     ; when there is no user program at all directly go to monitor
-    LDA >$810000
+    LDA >$800000
     CMP #$FFFF
     BEQ startmonitor
     ; give some time to press key to enter monitor 
@@ -98,7 +97,7 @@ skipstartmessage:
     CMP #0
     BPL startmonitor
     ; start user program
-    JMP >$810000
+    JMP >$800000
 startmonitor
     JSL >~~monitor
     JMP >~~softreset
@@ -638,9 +637,9 @@ executefromstackframe:
 
 ; -------------------- MEMORY CONFIGURATION QUERY ----------------------------
 ; User modifyable flash range (everything except boot loader) 
-; extends from $810000 to $88F000 (508KB)
+; extends from $800000 to $87F000 (508KB)
 ~~topaddress_flash:
-    LDX #$0088
+    LDX #$0087
     LDA #$F000
     RTL
 ; RAM range is 512KB starting from 0
@@ -652,25 +651,24 @@ executefromstackframe:
     ENDS
     
 ; ----------------- Reset code ----------------------------    
-RESET SECTION
+RESET SECTION             ; needs to be located at $FFFFF0  
     ; This is a very tricky startup code that needs to work with both
     ; the original 65c816 as well as the Bernd emulator.
-   ORG $80FFF0
     ; The original CPU will come up in emulation mode which has a different
-    ; memory map so it can access the ROM via bank 0. 
-    ; In this case we must switch to a true ROM bank and turn off emulation.
-ORIGINAL65C816:           ; 80FFF0
+    ; memory map so it will always access bank $FF instead of default 0. 
+    ; In this case we must switch to the true ROM bank and turn off emulation.
+ORIGINAL65C816:           ; FFFFF0
     JMP >TOHIGHBANK  
-TOHIGHBANK:               ; 80FFF4
-    CLC 
-    XCE                
+TOHIGHBANK:               ; FFFFF4
+    CLC
+    XCE
     REP #$30 
     ; Bernd emulation will not use the reset vectors, but will directly jump to this
     ; location with emulation already turned off and all registers in 16bit mode
-BERND:                    ; 80FFF8
+BERND:                    ; FFFFF8
     JMP >~~softreset
     ; The reset vector for the 65C816
-RESETVECTOR:              ; 80FFFC
+RESETVECTOR:              ; FFFFFC
     DW $FFF0
     DW 0                  ; padding
     

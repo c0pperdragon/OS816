@@ -17,19 +17,19 @@
     xdef ~~eraseflash
     xdef ~~topaddress_flash
     xdef ~~topaddress_ram
-~~softreset        set $80F000
-~~sleep            set $80F004
-~~send             set $80F008
-~~receive          set $80F00C
-~~sendstr          set $80F010
-~~writeflash       set $80F014
-~~eraseflash       set $80F018
-~~topaddress_flash set $80F01C
-~~topaddress_ram   set $80F020
+~~softreset        set $FFF000
+~~sleep            set $FFF004
+~~send             set $FFF008
+~~receive          set $FFF00C
+~~sendstr          set $FFF010
+~~writeflash       set $FFF014
+~~eraseflash       set $FFF018
+~~topaddress_flash set $FFF01C
+~~topaddress_ram   set $FFF020
 
     ; start vector on fixed address        
 LAUNCH SECTION
-    ORG $810000
+    ORG $800000
     JMP >startmain
     ENDS
         

@@ -8,3 +8,4 @@ int romfile_closewrite(int writefd) ;
 unsigned int romfile_write(int writefd, void * buffer, unsigned int len);
 int romfile_delete(const char* name);
 long romfile_lseekwrite(int writefd, long offset, int whence);
+void romfile_compact(void);

@@ -69,6 +69,7 @@ char *romFileStart(void)
 typedef struct 
 {
     unsigned int isopen;
+    unsigned char* filename;
     unsigned char* data;
     unsigned long size;
     unsigned long cursor;
@@ -86,6 +87,7 @@ RomReadFile *getOpenRomReadFile(int readfd)
     if (!f->isopen) { return 0l; }
     return f;
 }
+
 
 int romfile_openread(const char * name)
 {
@@ -114,6 +116,7 @@ int romfile_openread(const char * name)
             if (f->isopen) { continue; }
             // yes, found a descriptor, set up for operation
             f->isopen = 1;
+            f->filename = img + 8;
             f->data = img + 9 + namelength;
             f->size = imagelength - namelength - 9;
             f->cursor = 0; 
@@ -199,11 +202,46 @@ RomWriteFile *getOpenRomWriteFile(int writefd)
     return f;
 }
 
+// check if there is any open file with this name (for reading or writing)
+int haveActiveRomFile(const char* name)
+{
+    int i;
+    RomReadFile *rf;
+    RomWriteFile *wf;
+    for (i=0, rf=romreadfiles; i<CONCURRENTREADFILES; i++, rf++) 
+    {
+        if (rf->isopen && strcmplen(name,rf->filename)) { return 1; }
+    }
+    for (i=0, wf=romwritefiles; i<CONCURRENTWRITEFILES; i++, wf++) 
+    {
+        if (wf->isopen && strcmplen(name,wf->filename)) { return 1; }
+    }
+    return 0;
+}
+
+// scan through files to find first unused position 
+char* findUnusedRomLocation(void)
+{
+    char* img = romFileStart();
+    while ( *((unsigned long*)img) == ROMFILETAG)
+    {
+        unsigned long l = *((unsigned long*)(img+4));
+        img += l;
+    }
+    return img;
+}
+
 int romfile_openwrite(const char *name)
 {
     unsigned int namelength = strcmplen(name, name);
     RomWriteFile* f;
     int i;
+
+    // prevent write-accessing an already opened file
+    if (haveActiveRomFile(name)) { return -1; }
+
+    // delete a possible previously existing file of the same name
+    romfile_delete(name);
 
     // find a free file descriptor
     for (i=0, f=romwritefiles; namelength && i<CONCURRENTWRITEFILES; i++, f++) 
@@ -237,31 +275,33 @@ int romfile_closewrite(int writefd)
     char* img;
     char* imgend;
     unsigned int i;
-    unsigned long dummy;
+
+        romfile_compact();
     
     if (!f) { return -1; }
-
-    // delete a possible previously existing file of the same name
-    romfile_delete(f->filename);
 
     // calculate needed total size of rom file
     namelength = strcmplen(f->filename,f->filename);
     totalsize = 9 + namelength + f->size;
 
-    // scan through files to find first unused position
-    for (img = romFileStart(); *((unsigned long*)img) == ROMFILETAG; )
-    {
-        unsigned long l = *((unsigned long*)(img+4));
-        dummy=(unsigned long) img;
-        img += l;
-    }
-    
-    // check if there is enough empty space to store the file
-    if (img+totalsize>topaddress_flash()) { returncode=-1; goto release_all; }
-    // check if flash area can be written to
-    if (!isflashempty(img, totalsize)) { returncode=-1; goto release_all; }
-    
+    // calculate where the file should be written to
+    img = findUnusedRomLocation();
     imgend = img + totalsize;
+    
+    // first check if there is enough empty space to store the file
+    if (imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
+    { 
+        romfile_compact();
+        img = findUnusedRomLocation();
+        imgend = img + totalsize;
+        // check again after compacting
+        // check if there is enough empty space to store the file
+        if (imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
+        {
+            returncode=-1; 
+            goto release_all; 
+        }
+    }    
 
     // write the header
     writeflash(img, &tag, 4);
@@ -377,3 +417,33 @@ long romfile_lseekwrite(int writefd, long offset, int whence)
     f->cursor = newcursor;
     return newcursor;
 }
+
+// ---------------- compactification ---------------------------------
+
+// allocate 4KB on the stack and call the worker function with a pointer
+// to this temporary memory
+void romfile_compact()
+{
+    #asm
+        TSC
+        SEC
+        SBC #4096
+        TCS
+        PEA #0
+        INA
+        PHA
+        JSL ~~compactRomFile
+        TSC
+        CLC
+        ADC #4096
+        TCS
+    #endasm    
+}
+
+// actual compactification function 
+void compactRomFile(char *tmp4k)
+{
+    int i;
+    for (i=0; i<4096; i++) { tmp4k[i] = 66; }
+}
+
