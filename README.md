@@ -5,7 +5,7 @@ A small breadboard circuit to use the 65C816 processor and a tiny operating syst
 This project also provides some examples (starting with the most basic LED animation) 
 to use these libraries and actually get the WDC tool chain to work.
 
-![alt text](os816breadboard.jpg "Reference setup on breadboard")
+![alt text](gallery/breadboard.jpg "Reference setup on breadboard")
 
 ## 65C816 reference setup
 
