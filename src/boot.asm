@@ -18,8 +18,8 @@ numconsumed         set $00FFFF   ; 8 bit
 ; de-asserting the line again. 
 ; For true 65c816:
 ;    One timeout unit is 17 clocks, so a receive function call will
-;    cause an idle delay of about 600 microseconds.
-timeout1             set 244
+;    cause an idle delay of about 500 microseconds.
+timeout1             set 255
 timeout2             set 102
 ; For Bernd emulation use same values, even if the timeout would be higher than necessary
 
@@ -78,7 +78,9 @@ skipstartupdelay:
 
     ; check incomming CTS signal to detect if there is a communication partner
     ; present to receive start message
+    SEP #$20 
     LDA >$7F0000
+    REP #$20    
     AND #$0040
     BNE skipstartmessage
     PEA #^startupmessage
@@ -409,11 +411,7 @@ berndemulation:
     NOP
     NOP
     NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    LDX #1  
+    LDX #2
 delay1:
     DEX                                                  
     BNE delay1
