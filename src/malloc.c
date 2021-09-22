@@ -3,8 +3,6 @@
 #include <string.h>
 #include "os816.h"
 
-#define HEAPSTART 0x010000
-
 
 typedef struct FreeBlock {
     unsigned long length;     // total size (for free or used blocks alike)
@@ -17,10 +15,31 @@ char isheapinitialized = 0;
 FreeBlock *firstfree = 0;
 
 
+char *heapStart(void)
+{
+    unsigned long top1;
+    unsigned long top2;
+    #asm
+        XREF _END_DATA
+        LDA #<_END_DATA
+        STA %%top1
+        LDA #^_END_DATA
+        STA %%top1+2
+        XREF _END_UDATA
+        LDA #<_END_UDATA
+        STA %%top2
+        LDA #^_END_UDATA
+        STA %%top2+2
+    #endasm
+    if (0x010000>top1) { top1=0x010000; } 
+    if (top2>top1) { top1=top2; }
+    return (char*) top1;
+}
+
 void initheap(void)
 {
-    firstfree = (FreeBlock*) HEAPSTART;
-    firstfree->length = ((unsigned long)topaddress_ram())-HEAPSTART;
+    firstfree = (FreeBlock*) heapStart();
+    firstfree->length = ((unsigned long)topaddress_ram())-((unsigned long) firstfree);
     firstfree->next = 0;
     isheapinitialized = 1;    
 }    

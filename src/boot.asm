@@ -482,7 +482,7 @@ sendstrend:
     TCS
     TCD
     ; transfer program to RAM
-    LDX #32
+    LDX #30
 transferaccesscode:
     LDA >writebytetoflash,X
     STA <1,X
@@ -497,6 +497,8 @@ transferaccesscode:
     LONGA OFF
 writeflashloop:    
     DEY
+    LDA [<60],Y
+    TAX                     
     JSL executefromstackframe  
     TYX
     BNE writeflashloop
@@ -519,7 +521,8 @@ skipcopyloop:
     RTL
 ; This code needs to be mirrored to RAM before executing. 
 ; parameters:
-;     Y  offset in source and the target buffer
+;     X value to be written (in lower byte)
+;     Y offset target buffer (must be preserved)
 ; D must point to the stack frame as specified by writeflash. 
 ; Register widths A/M 8 bit, X/Y 16 bit
 ; Invocation by far subroutine call
@@ -531,7 +534,7 @@ writebytetoflash:
     STA >$802AAA             ; 4
     LDA #$A0                 ; 2
     STA >$805555             ; 4
-    LDA [<60],Y              ; 2
+    TXA                      ; 1
     STA [<56],Y              ; 2
 waitflashstable:
     LDA [<56],Y              ; 2
@@ -540,7 +543,7 @@ waitflashstable:
     CMP [<56],Y              ; 2
     BNE waitflashstable      ; 2
     RTL                      ; 1
-    LONGA ON                 ; 33 bytes total 
+    LONGA ON                 ; 32 bytes total 
 
 ; ---------------- Erase FLASH sector ---------------------
 ~~eraseflash:

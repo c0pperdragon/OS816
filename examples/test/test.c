@@ -164,12 +164,12 @@ void testfileoutput(void)
     unsigned int i;
     unsigned long sum;
     
-    if (! (f = fopen("y","wb")) ) 
+    if (! (f = fopen("y.txt","wb")) ) 
     { 
         printf("Can not open for write\n"); 
         return; 
     }
-    for (i=1; i<=2000; i++)
+    for (i=1; i<=11000; i++)
     {
         if (fwrite(&i, 2, 1, f)!=1)        
         {
@@ -183,7 +183,7 @@ void testfileoutput(void)
         return; 
     }
     
-    if (! (f = fopen("y", "rb")) )
+    if (! (f = fopen("y.txt", "rb")) )
     { 
         printf("Can not open for read\n"); 
         return; 
@@ -193,7 +193,7 @@ void testfileoutput(void)
         printf("Error on fseek\n"); 
         return; 
     }
-    test ((unsigned int) ftell(f), 4000);                                    // 19
+    test ((unsigned int) ftell(f), 22000);                                    // 19
     fseek(f,(long)0,SEEK_SET);
     sum=0;
     while (fread (&i, 2, 1, f) == 1) 
@@ -201,7 +201,7 @@ void testfileoutput(void)
         sum+=i;
     }    
     fclose(f);
-    test ((unsigned int) sum, (unsigned int) (2001*1000));      // 20
+    test ((unsigned int) sum, (unsigned int) (11001*5500));      // 20
 }
     
 void testfseek(void)
@@ -247,5 +247,5 @@ int main(int argc, char** argv)
     testfseek();
 
     printf ("Tests completed\n");
-    return (-1); // do not restart program
+    return (0); 
 }

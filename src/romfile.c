@@ -5,6 +5,7 @@
 #include "romfile.h"
 
 #define ROMFILETAG    0x454C4946           // magic code "FILE"
+#define SECTOR(target) ((char*)(((unsigned long)(target))&0xFFFFF000))
 
 // Structure of the rom file system:
 // Beginning at romFileStart, all files are stored sequentially:
@@ -47,6 +48,7 @@ char *romFileStart(void)
 {
     unsigned long top1;
     unsigned long top2;
+    unsigned long top3;
     #asm
         XREF _END_CODE
         LDA #<_END_CODE
@@ -58,9 +60,17 @@ char *romFileStart(void)
         STA %%top2
         LDA #^_END_KDATA
         STA %%top2+2
+        XREF _ROM_BEG_DATA
+        XREF _BEG_DATA
+        XREF _END_DATA
+        LDA #<_ROM_BEG_DATA+(_END_DATA-_BEG_DATA)
+        STA %%top3
+        LDA #^_ROM_BEG_DATA+(_END_DATA-_BEG_DATA)
+        STA %%top3+2
     #endasm
     if (top2>top1) { top1=top2; }
-    return (char*) ((top1+0xFFF) & 0xFFFFF000);
+    if (top3>top1) { top1=top3; }
+    return SECTOR(top1+0xFFF);
 }
 
 
@@ -69,7 +79,7 @@ char *romFileStart(void)
 typedef struct 
 {
     unsigned int isopen;
-    unsigned char* filename;
+    unsigned char* img;
     unsigned char* data;
     unsigned long size;
     unsigned long cursor;
@@ -88,6 +98,19 @@ RomReadFile *getOpenRomReadFile(int readfd)
     return f;
 }
 
+void relocateRomReadFile(char* imgbefore, char* imgafter)
+{
+    int i;
+    RomReadFile *rf;
+    for (i=0, rf=romreadfiles; i<CONCURRENTREADFILES; i++, rf++) 
+    {
+        if (rf->isopen && rf->img == imgbefore)
+        {
+            rf->img = imgafter;
+            rf->data = imgafter + 8 + strcmplen(imgafter+8, imgafter+8) + 1;
+        }
+    }
+}
 
 int romfile_openread(const char * name)
 {
@@ -101,7 +124,7 @@ int romfile_openread(const char * name)
         unsigned int namelength;
         unsigned int i;
         
-        if (*((unsigned long*)img) != ROMFILETAG) { return -1; }  
+        if (*((unsigned long*)img) != ROMFILETAG) { return -1; }  // no more valid romfiles
         imagelength = *((unsigned long*)(img+4));   // total size in bytes
         
         if (! (namelength = strcmplen(img+8, name)) )   // check for correct name
@@ -116,7 +139,7 @@ int romfile_openread(const char * name)
             if (f->isopen) { continue; }
             // yes, found a descriptor, set up for operation
             f->isopen = 1;
-            f->filename = img + 8;
+            f->img = img;
             f->data = img + 9 + namelength;
             f->size = imagelength - namelength - 9;
             f->cursor = 0; 
@@ -210,7 +233,7 @@ int haveActiveRomFile(const char* name)
     RomWriteFile *wf;
     for (i=0, rf=romreadfiles; i<CONCURRENTREADFILES; i++, rf++) 
     {
-        if (rf->isopen && strcmplen(name,rf->filename)) { return 1; }
+        if (rf->isopen && strcmplen(name,rf->img+8)) { return 1; }
     }
     for (i=0, wf=romwritefiles; i<CONCURRENTWRITEFILES; i++, wf++) 
     {
@@ -220,6 +243,7 @@ int haveActiveRomFile(const char* name)
 }
 
 // scan through files to find first unused position 
+// in case the storage is corrupted, return 0
 char* findUnusedRomLocation(void)
 {
     char* img = romFileStart();
@@ -228,6 +252,7 @@ char* findUnusedRomLocation(void)
         unsigned long l = *((unsigned long*)(img+4));
         img += l;
     }
+    if ( *((unsigned long*)img) != 0xFFFFFFFF) { return 0; }  // found unusable area
     return img;
 }
 
@@ -267,17 +292,15 @@ int romfile_openwrite(const char *name)
 int romfile_closewrite(int writefd) 
 {
     RomWriteFile* f = getOpenRomWriteFile(writefd);
-    unsigned long tag = ROMFILETAG;
     int returncode = 0;
     unsigned int namelength;
     unsigned long totalsize;
     char* romfiletop;
     char* img;
     char* imgend;
+    char* cursor;
     unsigned int i;
 
-        romfile_compact();
-    
     if (!f) { return -1; }
 
     // calculate needed total size of rom file
@@ -289,37 +312,40 @@ int romfile_closewrite(int writefd)
     imgend = img + totalsize;
     
     // first check if there is enough empty space to store the file
-    if (imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
+    if ((!img) || imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
     { 
         romfile_compact();
-        img = findUnusedRomLocation();
-        imgend = img + totalsize;
         // check again after compacting
         // check if there is enough empty space to store the file
-        if (imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
+        img = findUnusedRomLocation();
+        imgend = img + totalsize;        
+        if ((!img) || imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
         {
             returncode=-1; 
             goto release_all; 
         }
     }    
 
-    // write the header
-    writeflash(img, &tag, 4);
-    img += 4;    
-    writeflash(img, &totalsize, 4);
-    img += 4;
-    writeflash(img, f->filename, namelength+1);
-    img += namelength;
-    img ++;
-    
+    cursor = img;
+    // write first half of the header (when arborting now, the file is unusable)
+    writeflash(cursor, "FI", 2);
+    cursor += 4;    
+    // write size information
+    writeflash(cursor, &totalsize, 4);
+    cursor += 4;
+    writeflash(cursor, f->filename, namelength+1);
+    cursor += namelength;
+    cursor ++;    
     // write all the chunks 
     for (i=0; i<f->usedchunks; i++)
     {
-        unsigned int len = img+CHUNKSIZE<imgend ? CHUNKSIZE : (unsigned int)(imgend-img);
-        writeflash (img, f->chunks[i], len);
-        img += CHUNKSIZE;
+        unsigned int len = cursor+CHUNKSIZE<imgend ? CHUNKSIZE : (unsigned int)(imgend-cursor);
+        writeflash (cursor, f->chunks[i], len);
+        cursor += len;
     }
-        
+    // write second half of the header to make the file valid
+    writeflash(img+2, "LE", 2);
+    
 release_all:
     for (i=0; i<f->usedchunks; i++) { free(f->chunks[i]); }
     free(f->chunks);
@@ -432,7 +458,7 @@ void romfile_compact()
         PEA #0
         INA
         PHA
-        JSL ~~compactRomFile
+        JSL ~~compactRomFiles
         TSC
         CLC
         ADC #4096
@@ -440,10 +466,81 @@ void romfile_compact()
     #endasm    
 }
 
-// actual compactification function 
-void compactRomFile(char *tmp4k)
+// fill transfer buffer and write to FLASH when buffer is filled
+// in case this is the first transfer that hits the buffer, must make sure the
+// start part is filled with the orginal data from the same target location
+void transferViaBuffer(char* target, char* img, unsigned long len, char* tmp4k, int previouslytransfered)
 {
-    int i;
-    for (i=0; i<4096; i++) { tmp4k[i] = 66; }
+    char* targetsector = SECTOR(target);
+    if (!previouslytransfered)
+    {
+        memcpy (tmp4k, targetsector, (unsigned int)(target-targetsector));
+    }
+    while (len>0)
+    {
+        unsigned int space = 0x1000 - (unsigned int)(target-targetsector);
+        if (len<space)
+        {
+            memcpy (tmp4k+(target-targetsector), img, (unsigned int) len);
+            return;
+        }
+        else
+        {
+            memcpy (tmp4k+(target-targetsector), img, space);
+            eraseflash(targetsector);
+            writeflash(targetsector, tmp4k, 0x1000);
+            target += space;
+            img += space;
+            len -= space;
+            targetsector = SECTOR(target);
+        }
+    }
+}
+
+// actual compactification function 
+void compactRomFiles(char *tmp4k)
+{
+    char *img = romFileStart();   // source
+    char *target = img;           // target cursor
+    int previouslytransfered = 0;  
+    char* targetsector;
+    char* erasesector;
+    
+    // scan over all files and copy-compact them
+    for (;;)   
+    {
+        unsigned long len = *((unsigned long*)(img+4));
+        // check if encountered corrupt file or last file in store
+        if ( *((unsigned long*)img) != ROMFILETAG) { break; }
+        if (len<9 || len>10000000 || img+len>topaddress_flash()) { break; }
+        // encountered non-deleted file 
+        if (img[8]) 
+        {
+            // need to actually copy data if there was a hole previously
+            if (img!=target) 
+            {
+                transferViaBuffer(target,img,len,tmp4k,previouslytransfered);
+                relocateRomReadFile(img,target);
+                previouslytransfered = 1;                
+            }
+            img += len;
+            target += len;
+        }
+        // encountered deleted file which we just skip (so src and target diverges)
+        else
+        {
+            img += len;
+        }
+    }
+    // make sure the start of the buffer is correctly set in case no files were transfered yet
+    transferViaBuffer(target, 0, 0L, tmp4k, previouslytransfered);    
+    targetsector = SECTOR(target);
+    // erase everything after the files up to the end of rom file area
+    for (erasesector=targetsector; erasesector < topaddress_flash(); erasesector+=0x1000)
+    {
+        eraseflash(erasesector);        
+    }
+    // write back the first part of the buffer in the newly erased area (may even have zero length)
+    writeflash (targetsector, tmp4k, (unsigned int)(target-targetsector));   
 }
 
