@@ -58,8 +58,8 @@ To see how all these tools should be used, have a look at the build scripts for 
 ## Get the boot loader into the flash
 
 This is a step you probably need to do only once, but it requires the use of a dedicated chip programmer, 
-like the TL866-II Plus and its corresponding progrgamming software. Building the OS816 libraries by executing
-the 'build.bat' script in the src directory, will create some libraries in the 'bin' directory,
+like the TL866-II Plus and its corresponding programming software. Building the OS816 libraries by executing
+the 'build.bat' script in the 'src' directory, will create some libraries in the 'bin' directory,
 and also the 'boot.hex' file which needs to be written to the flash IC.
 To avoid buying this not completely cheap programmer I could provide you with a pre-flashed IC for a reasonable
 price. 
