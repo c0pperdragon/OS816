@@ -97,12 +97,15 @@ skipstartmessage:
     ; check if some key was pressed in the meantime
     JSL ~~receive
     CMP #0
-    BPL startmonitor
-    ; start user program
-    JMP >$800000
-startmonitor
+    BMI startuserprogram
+startmonitor:
     JSL >~~monitor
-    JMP >~~softreset
+    ; when there is a user program available then, fire it up
+    LDA >$800000
+    CMP #$FFFF
+    BEQ startmonitor
+startuserprogram:
+    JMP >$800000
 
 startupmessage:
     DB "OS816 1.0 - press any key to enter monitor."
