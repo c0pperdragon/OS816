@@ -29,13 +29,15 @@ to make use of the full address range with flat regions for both RAM, IO and ROM
 
 ## Memory map
 
-$000000 - $07FFFF    RAM
-$7Fxxxx              IO
-$800000 - $87EFFF    User flash
-$FFF000 - $FFFFFF    Boot loader flash
+| from   | to     | type 
+| ------ | ------ | -----------------
+| 000000 | 07FFFF | RAM
+| 7Fxxxx | 7Fxxxx | IO
+| 800000 | 87EFFF | User flash
+| FFF000 | FFFFFF | Boot loader flash
 
 All other ranges of the 16MB space are mirrors of some of the specified ranges here, but should not 
-be used to not prevent future extensions.
+be used to allow future extensions.
 
 ## Compiling for the platform
 
@@ -78,9 +80,9 @@ interface board with support for these signals.
 
 ## Performance hints
 
-* The C compiler internally uses the 16 bit register mode of the CPU, so working
+The C compiler internally uses the 16 bit register mode of the CPU, so working
 with 16 bit integers is the default and most optimized option. Using 8-bit values for
 local variables or parameters instead only degrades performance. 
 
-* Function calls have a pretty high overhead, so maybe it makes sense to inline 
+Function calls have a pretty high overhead, so maybe it makes sense to inline 
 certain things using macros.
