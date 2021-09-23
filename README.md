@@ -37,7 +37,7 @@ to make use of the full address range with flat regions for both RAM, IO and ROM
 | FFF000 | FFFFFF | Boot loader flash
 
 All other ranges of the 16MB space are mirrors of some of the specified ranges here, but should not 
-be used to allow future extensions.
+be used in order to allow future extensions.
 
 ## Compiling for the platform
 
@@ -54,6 +54,18 @@ The necessary compiler and linker can be found at the Western Design Center's
 Additionally you need a [python 3 interpreter](https://www.python.org/downloads/) to run my extra build tools.
 
 To see how all these tools should be used, have a look at the build scripts for the various examples provided.
+
+## Get the boot loader into the flash
+
+This is a step you probably need to do only once, but it requires the use of a dedicated chip programmer, 
+like the TL866-II Plus and its corresponding progrgamming software. Building the OS816 libraries by executing
+the 'build.bat' script in the src directory, will create some libraries in the 'bin' directory,
+and also the 'boot.hex' file which needs to be written to the flash IC.
+To avoid buying this not completely cheap programmer I could provide you with a pre-flashed IC for a reasonable
+price. 
+
+If there is actual demand I could also have PCBs manufactured and sell them with all parts as a kit.
+In either case please use my contact address in the bottom of this page.
 
 ## Uploading 
 
@@ -90,3 +102,11 @@ local variables or parameters instead only degrades performance.
 
 Function calls have a pretty high overhead, so maybe it makes sense to inline 
 certain things using macros.
+
+## Contact
+
+For questions regarding purchases, please contact me directly at:
+reinhard.grafl (at) aon.at
+
+For other questions that may also be of interest for other users, 
+please create an [issue ticket](https://github.com/c0pperdragon/OS816/issues).  
