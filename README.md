@@ -1,7 +1,7 @@
 # OS816
 
-A small breadboard circuit to use the 65C816 processor together with 512KB of RAM, 512KB of Flash
-and a pretty simple but effective I/O circuitry.
+A small breadboard circuit to use the 65C816 processor running at 12MHz, together with 512KB of RAM, 512KB of Flash
+and a simple but effective I/O circuitry.
 
 I made a small boot loader program for this hardware sitting in the top 4KB of Flash to upload further
 code via a serial connection to avoid the need of swapping the Flash IC in and out of the board all the time.
@@ -41,22 +41,26 @@ be used to allow future extensions.
 
 ## Compiling for the platform
 
-The WDC compiler tools are used that include a C compiler, so it is easy to
+The WDC compiler tools (running on Windows only) are used that include a C compiler, so it is easy to
 get things done without directly touching the 65C816 machine code. The OS816 libraries are designed
 for the "large" memory model to evenly access static and dynamic data without bothering
-about banks, direct page and all the other intricated details of this specific CPU.
+about banks, direct page and all the other intricate details of this specific CPU.
 Low level access to the hardware (essentially to the IO port, but also the flash programming functions) 
 is provided by libraries that are directly written in machine code for best performance and because sometimes it would not be 
 possible otherwise.
 
-To see how the compiler and linker should be used, have a look at the build scripts for the various examples provided.
+The necessary compiler and linker can be found at the Western Design Center's
+[download page](https://www.westerndesigncenter.com/wdc/tools.php).
+Additionally you need a [python 3 interpreter](https://www.python.org/downloads/) to run my extra build tools.
+
+To see how all these tools should be used, have a look at the build scripts for the various examples provided.
 
 ## Uploading 
 
 Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
 written to the Flash using the resident boot loader program. When starting up the machine with a serial terminal attached,
-the boot loader enters a command line interface. Here memory locations can be expected or modified and also the content
-of the Flash can be reprogrammed. After completely erasing the user flash area with the "!" command, you can conveniently 
+the boot loader enters a command line interface. Here memory locations can be inspected or modified and also the content
+of the flash can be reprogrammed. After completely erasing the user flash area with the "!" command, you can conveniently 
 dump a whole intel hex file into the terminal whose lines will be treated as individual programming commands.
 Once the user program is in the flash, the command "x" will start up this program. 
 When the machine starts up with a user program already installed, the boot loader will give you 1 second 
