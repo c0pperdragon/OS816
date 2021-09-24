@@ -32,7 +32,7 @@ to make use of the full address range with flat regions for both RAM, IO and ROM
 | from   | to     | type 
 | ------ | ------ | -----------------
 | 000000 | 07FFFF | RAM
-| 7Fxxxx | 7Fxxxx | IO
+| 7F0000 | 7F0000 | IO port
 | 800000 | 87EFFF | User flash
 | FFF000 | FFFFFF | Boot loader flash
 
