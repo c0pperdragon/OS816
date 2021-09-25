@@ -291,6 +291,7 @@ int romfile_openwrite(const char *name)
 
 int romfile_closewrite(int writefd) 
 {
+#define ABORT { returncode=-1;  goto release_all; }
     RomWriteFile* f = getOpenRomWriteFile(writefd);
     int returncode = 0;
     unsigned int namelength;
@@ -319,32 +320,28 @@ int romfile_closewrite(int writefd)
         // check if there is enough empty space to store the file
         img = findUnusedRomLocation();
         imgend = img + totalsize;        
-        if ((!img) || imgend>topaddress_flash() || !isflashempty(img, totalsize)) 
-        {
-            returncode=-1; 
-            goto release_all; 
-        }
+        if ((!img) || imgend>topaddress_flash() || !isflashempty(img, totalsize)) ABORT
     }    
 
     cursor = img;
     // write first half of the header (when arborting now, the file is unusable)
-    writeflash(cursor, "FI", 2);
+    if (writeflash(cursor, "FI", 2)!=2) ABORT
     cursor += 4;    
     // write size information
-    writeflash(cursor, &totalsize, 4);
+    if (writeflash(cursor, &totalsize, 4)!=4) ABORT
     cursor += 4;
-    writeflash(cursor, f->filename, namelength+1);
+    if (writeflash(cursor, f->filename, namelength+1) != namelength-1) ABORT
     cursor += namelength;
     cursor ++;    
     // write all the chunks 
     for (i=0; i<f->usedchunks; i++)
     {
         unsigned int len = cursor+CHUNKSIZE<imgend ? CHUNKSIZE : (unsigned int)(imgend-cursor);
-        writeflash (cursor, f->chunks[i], len);
+        if (writeflash (cursor, f->chunks[i], len)!=len) ABORT
         cursor += len;
     }
     // write second half of the header to make the file valid
-    writeflash(img+2, "LE", 2);
+    if (writeflash(img+2, "LE", 2)!=2) ABORT
     
 release_all:
     for (i=0; i<f->usedchunks; i++) { free(f->chunks[i]); }

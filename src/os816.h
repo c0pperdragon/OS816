@@ -16,7 +16,7 @@ int receive(void);   // returns either the next byte or -1 if nothing available
 void sendstr(const char* str);
 
 // Facility to write to the flash area
-void writeflash(char* target, void* data, unsigned int size);
+unsigned int writeflash(char* target, void* data, unsigned int size);
 void eraseflash(char* sectoraddress);
 
 // Memory configuration queries

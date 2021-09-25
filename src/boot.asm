@@ -493,6 +493,7 @@ transferaccesscode:
     DEX
     BPL transferaccesscode    
     ; init counters
+    LDX #0
     LDY <64
     BEQ skipcopyloop
     ; use 8-bit accu/memory access during loop
@@ -505,6 +506,20 @@ writeflashloop:
     JSL executefromstackframe  
     TYX
     BNE writeflashloop
+    ; test how many bytes were written correctly    
+    LDX #0
+    LDY <64 
+verifyloop:
+    INY
+    DEY
+    BEQ verifydone
+    DEY
+    LDA [<60],Y
+    CMP [<56],Y
+    BNE verifyloop
+    INX
+    BRA verifyloop
+verifydone:
     ; revert to 16 bit
     REP #$20
     LONGA ON
@@ -521,6 +536,8 @@ skipcopyloop:
     CLC
     ADC #62
     TCS
+    ; return value was prepared in X
+    TXA
     RTL
 ; This code needs to be mirrored to RAM before executing. 
 ; parameters:

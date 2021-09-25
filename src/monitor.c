@@ -210,7 +210,10 @@ void processline(char* line, unsigned int* hexoffset)
                 sendstr("\nOUT OF RANGE\n");
                 return;
             }
-            writeflash((char*)target, buffer, numbytes);
+            if (writeflash((char*)target, buffer, numbytes)!=numbytes)
+            {
+                sendstr("\nVERIFY ERROR\n");
+            }
         }
         else if (cmd==1)             // end of HEX file
         {
