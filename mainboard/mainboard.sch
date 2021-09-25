@@ -1215,7 +1215,7 @@ F 1 "74AC32" V 3624 7250 50  0000 C CNN
 F 2 "Package_DIP:DIP-14_W7.62mm_Socket" H 3900 7250 50  0001 C CNN
 F 3 "http://www.ti.com/lit/gpn/sn74LS32" H 3900 7250 50  0001 C CNN
 	5    3900 7250
-	0    1    1    0   
+	0    -1   1    0   
 $EndComp
 $Comp
 L power:+5V #PWR0115
