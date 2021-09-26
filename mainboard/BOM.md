@@ -24,7 +24,7 @@
 |                       |                      | C2, C3      |     2 | Ceramic Capacitor 33pF       | disc 6mm   |
 |                       |                      | C4          |     1 | Electrolytic Capacitor 100uF | radial 5mm |
 |                       |                      | C1, C5 - C13|    10 | Ceramic Capacitor 100nF      | disc 3mm   |
-|                       |                      | LED0 - LED7 |     8 | Rectangular LED 2x4 mm       | 2x4x5 mm   |
+|                       |                      | LED0 - LED7 |     8 | Rectangular LED 2.5x5 mm     | 2x4x5 mm   |
 |                       |                      | Y1          |     1 | Quarz Crystal 12MHz          | 7mm        |
 |                       |                      | RESET1      |     1 | Push Button                  | 6x6mm      |
 |                       |                      | JIN1, JOUT1 |     2 | Pin Socket 1x8               | rm 2.54mm  |

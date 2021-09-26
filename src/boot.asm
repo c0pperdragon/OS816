@@ -76,21 +76,20 @@ BOOT SECTION        ; needs to be located at $FFF000
     JSL ~~sleep
 skipstartupdelay:
 
-    ; check incomming CTS signal to detect if there is a communication partner
-    ; present to receive start message
-    SEP #$20 
-    LDA >$7F0000
-    REP #$20    
-    AND #$0040
-    BNE skipstartmessage
-    PEA #^startupmessage
-    PEA #<startupmessage
-    JSL ~~sendstr
-skipstartmessage:    
     ; when there is no user program at all directly go to monitor
     LDA >$800000
     CMP #$FFFF
     BEQ startmonitor
+    ; check incomming CTS signal to detect if there is a communication partner
+    ; present to receive start message and to maybe trigger boot monitor
+    SEP #$20 
+    LDA >$7F0000
+    REP #$20    
+    AND #$0040
+    BNE startuserprogram
+    PEA #^startupmessage
+    PEA #<startupmessage
+    JSL ~~sendstr
     ; give some time to press key to enter monitor 
     PEA #1000
     JSL ~~sleep
