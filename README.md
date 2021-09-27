@@ -94,14 +94,11 @@ interface board with support for these signals.
 | INPUT  7     | RX    | TX      |
 | INPUT  6     | CTS   | RTS     |
 
-## Performance hints
+## Build your own board
 
-The C compiler internally uses the 16 bit register mode of the CPU, so working
-with 16 bit integers is the default and most optimized option. Using 8-bit values for
-local variables or parameters instead only degrades performance. 
-
-Function calls have a pretty high overhead, so maybe it makes sense to inline 
-certain things using macros.
+I have created a parts list at [mouser](https://www.mouser.at/ProjectManager/ProjectDetail.aspx?AccessID=774c7f36b3) containing
+all the necessary parts to build the computer on either breadboards or on a PCB. The serial communication adapter is not part of the 
+build as there are many different options available.
 
 ## Contact
 
