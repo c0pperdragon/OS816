@@ -6,8 +6,9 @@ and a simple but effective I/O circuitry.
 I made a small boot loader program for this hardware sitting in the top 4KB of Flash to upload further
 code via a serial connection to avoid the need of swapping the Flash IC in and out of the board all the time.
 
-User programs can be developed with the WDC C compiler tool chain that supports basically the C89/90 standard
-(a.k.a ANSI C). I had to fix some bugs and add implementations for stdin/stdout over serial and file access
+User programs can be developed with the WDC compiler tool chain that provides an assembler as well as 
+a C compiler confirming to the C89/90 standard (a.k.a ANSI C). 
+I had to fix some bugs and add implementations for stdin/stdout over serial and file access
 to utilize the unoccupied area of the Flash memory. By now it is complete enough to run the "frotz" 
 interactive fiction interpreter.
 
