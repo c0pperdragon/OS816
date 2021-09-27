@@ -28,15 +28,15 @@ BOOT SECTION        ; needs to be located at $FFF000
     LONGI ON
     
 ; ------------ JUMP TABLE INTO THE BOOT LOADER ROUTINES ---------    
-    JMP >~~softreset            ; FFF000
-    JMP >~~sleep                ; FFF004
-    JMP >~~send                 ; FFF008 
-    JMP >~~receive              ; FFF00C
-    JMP >~~sendstr              ; FFF010 
-    JMP >~~writeflash           ; FFF014
-    JMP >~~eraseflash           ; FFF018
-    JMP >~~topaddress_flash     ; FFF01C
-    JMP >~~topaddress_ram       ; FFF020
+    JMP ~~softreset            ; FFF000
+    JMP ~~sleep                ; FFF003
+    JMP ~~send                 ; FFF006 
+    JMP ~~receive              ; FFF009
+    JMP ~~sendstr              ; FFF00C 
+    JMP ~~writeflash           ; FFF00F
+    JMP ~~eraseflash           ; FFF012
+    JMP ~~topaddress_flash     ; FFF015
+    JMP ~~topaddress_ram       ; FFF018
     
 ; -------------------- STARTUP -------------------------------
 ~~softreset:

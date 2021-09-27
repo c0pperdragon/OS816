@@ -330,7 +330,7 @@ int romfile_closewrite(int writefd)
     // write size information
     if (writeflash(cursor, &totalsize, 4)!=4) ABORT
     cursor += 4;
-    if (writeflash(cursor, f->filename, namelength+1) != namelength-1) ABORT
+    if (writeflash(cursor, f->filename, namelength+1) != namelength+1) ABORT
     cursor += namelength;
     cursor ++;    
     // write all the chunks 
