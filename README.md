@@ -64,9 +64,6 @@ and also the 'boot.hex' file which needs to be written to the flash IC.
 To avoid buying this not completely cheap programmer I could provide you with a pre-flashed IC for a reasonable
 price. 
 
-If there is actual demand I could also have PCBs manufactured and sell them with all parts as a kit.
-In either case please use my contact address in the bottom of this page.
-
 ## Uploading 
 
 Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
@@ -99,6 +96,9 @@ interface board with support for these signals.
 I have created a parts list at [mouser](https://www.mouser.at/ProjectManager/ProjectDetail.aspx?AccessID=774c7f36b3) containing
 all the necessary parts to build the computer on either breadboards or on a PCB. The serial communication adapter is not part of the 
 build as there are many different options available.
+
+If there is actual demand I could also take orders for kits including a PCB and a pre-flashed memory IC. 
+In this case please use my contact address in the bottom of this page.
 
 ## Contact
 
