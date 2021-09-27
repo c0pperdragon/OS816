@@ -483,6 +483,22 @@ sendstrend:
     SBC #50
     TCS
     TCD
+    ; compute last byte address of destination
+    LDA <64
+    DEA      ; length can be considered >=1 here
+    CLC
+    ADC <56    
+    STA <10 ; tmp
+    LDA <58
+    ADC #0
+    STA <12 ; tmp
+    ; check if outside bounds
+    LDX #0
+    LDA <57    
+    BPL skipcopyloop    ; destination start is < 800000
+    LDA <11
+    CMP #$87F0      
+    BPL skipcopyloop    ; destination end is >= 87F000   
     ; transfer program to RAM
     LDX #30
 transferaccesscode:
@@ -578,6 +594,15 @@ waitflashstable:
     SBC #50
     TCS
     TCD
+    ; round address down to sector boundary
+    LDA <56
+    AND #$F000
+    STA <56
+    ; check if sector may be erased
+    LDA <57
+    BPL aftererase  ; address was < 800000
+    CMP #$87F0      
+    BPL aftererase  ; address was >= 87F000    
     ; test if sector actually needs erasing
     LDA #$FFFF
     LDY #4096-2

@@ -121,7 +121,7 @@ void processline(char* line, unsigned int* hexoffset)
         sendstr("E <sectoraddress>  Erase 4K flash sector\n");
         sendstr("!                  Erase all user flash\n");        
         sendstr(":<intelhex>        Reprogram flash\n");        
-        sendstr("X or Q             Exit monitor and reboot\n");                
+        sendstr("X                  Exit monitor\n");                
     }
     else if (cmd=='M') {         // MEMORY DUMP
         skiptospace(line, &cursor);
@@ -240,7 +240,7 @@ void monitor(void)
     for (;;)
     {
         receiveline(line,200);
-        if (line[0]=='Q' || line[0]=='X') { return; }
+        if (line[0]=='X') { return; }
         if (line[0]) { processline(line, &hexoffset); }
     }    
 }
