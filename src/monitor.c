@@ -144,16 +144,17 @@ void processline(char* line, unsigned int* hexoffset)
     else if (cmd=='C') {         // CALL
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
-        address = parsenumber(line, &cursor, 6) - 1;
+        address = parsenumber(line, &cursor, 6);
     #asm
         BRA pushreturnaddress
     docall:
-        LDA %%address+1
-        PHA
         SEP #$20    
-        LDA %%address
+        LDA %%address+2
         PHA
         REP #$20    
+        LDA %%address
+        DEA
+        PHA
         RTL
     pushreturnaddress:
         JSL docall
