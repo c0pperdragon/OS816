@@ -104,7 +104,8 @@ startmonitor:
     CMP #$FFFF
     BEQ startmonitor
 startuserprogram:
-    JMP >$800000
+    JSL >$800000
+    BRA ~~softreset
 
 startupmessage:
     DB "OS816 1.0 - press any key to enter monitor."
