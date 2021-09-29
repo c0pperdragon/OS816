@@ -12,7 +12,7 @@ I had to fix some bugs and add implementations for stdin/stdout over serial and 
 to utilize the unoccupied area of the Flash memory. By now it is complete enough to run the "frotz" 
 interactive fiction interpreter.
 
-![alt text](gallery/breadboard.jpg "Reference setup on breadboard")
+![alt text](doc/breadboard.jpg "Reference setup on breadboard")
 
 ## 65C816 reference setup
 
