@@ -68,6 +68,13 @@ noclear:
     MVN #^_ROM_BEG_DATA,#^_BEG_DATA ;copy bytes
 nocopy:
 
+    ; to work around in a bug in the sprintf function, leave a portion 
+    ; of the stack unused 
+    TSC
+    SEC
+    SBC #768
+    TCS
+
     ; start the main function
     PEA #^argv
     PEA #<argv    

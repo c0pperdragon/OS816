@@ -117,7 +117,8 @@ void processline(char* line, unsigned int* hexoffset)
         sendstr("H                  Help (this message)\n");
         sendstr("M <addr>           Memory dump\n");
         sendstr("W <addr> <data>    Write to memory\n");
-        sendstr("C <addr>           Call program\n");
+        sendstr("R <addr>           Run program\n");
+        sendstr("C                  Clear RAM bank 0\n");
         sendstr("E <sectoraddress>  Erase 4K flash sector\n");
         sendstr("!                  Erase all user flash\n");        
         sendstr(":<intelhex>        Reprogram flash\n");        
@@ -141,7 +142,7 @@ void processline(char* line, unsigned int* hexoffset)
             skipoverspace(line, &cursor);
         }
     }
-    else if (cmd=='C') {         // CALL
+    else if (cmd=='R') {         // RUN
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6);
@@ -159,6 +160,17 @@ void processline(char* line, unsigned int* hexoffset)
     pushreturnaddress:
         JSL docall
     #endasm      
+    }
+    else if (cmd=='C') {         // CLEAR RAM BANK 0 (up to the stack pointer)
+    #asm
+        LDA #0
+        STA >$000000
+        LDX #0
+        LDY #1
+        TSC
+        DEA
+        MVN #0,#0
+    #endasm    
     }
     else if (cmd=='E') {         // ERASE FLASH SECTOR
         skiptospace(line, &cursor);
@@ -237,7 +249,7 @@ void monitor(void)
     char line[200];
     unsigned int hexoffset = 0;
     
-    sendstr("OS816 boot monitor 1.0 - type H for help.\n");
+    sendstr("OS816 boot monitor 1.1 - type H for help.\n");
     for (;;)
     {
         receiveline(line,200);

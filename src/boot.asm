@@ -9,7 +9,7 @@
     
     
 ; --------------------- RAM layout ---------------------------- 
-stacktop            set $00FBFF   ; stay 1K clear of top to work around a bug in sprintf
+stacktop            set $00FEFF   ; right below the 256 bytes for serial handling
 buffereddata        set $00FF00   ; 254 bytes
 numbuffered         set $00FFFE   ; 8 bit
 numconsumed         set $00FFFF   ; 8 bit
@@ -58,14 +58,15 @@ BOOT SECTION        ; needs to be located at $FFF000
     ; initial direct pointer  = 0
     LDA #0
     TCD
-    ; initial data bank register = 0
-    PHA
-    PLB
-    PLB
 
-    ; initialize serial communication buffer
+    ; clear initial serial communication buffer
+    ; and also init data bank register on the way
     LDA #0
-    STA >numbuffered  ;and also clear numconsumed
+    STA >buffereddata
+    LDX #buffereddata
+    LDY #buffereddata+1
+    LDA #254
+    MVN #^buffereddata,#^buffereddata ;clear-copy bytes
     
     ; for genuine 65c816 add a small delay to stay clear of 
     ; potential double resets at power up
@@ -108,7 +109,7 @@ startuserprogram:
     BRA ~~softreset
 
 startupmessage:
-    DB "OS816 1.0 - press any key to enter monitor."
+    DB "OS816 1.1 - press any key to enter monitor."
     DB 10,0
     
     
