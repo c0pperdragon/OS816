@@ -74,7 +74,7 @@ BOOT SECTION        ; needs to be located at $FFF000
     XCE 
     BCS skipstartupdelay
     PEA #100
-    JSL ~~sleep
+    JSL >~~sleep
 skipstartupdelay:
 
     ; when there is no user program at all directly go to monitor
@@ -90,12 +90,12 @@ skipstartupdelay:
     BNE startuserprogram
     PEA #^startupmessage
     PEA #<startupmessage
-    JSL ~~sendstr
+    JSL >~~sendstr
     ; give some time to press key to enter monitor 
     PEA #1000
-    JSL ~~sleep
+    JSL >~~sleep
     ; check if some key was pressed in the meantime
-    JSL ~~receive
+    JSL >~~receive
     CMP #0
     BMI startuserprogram
 startmonitor:
@@ -129,7 +129,7 @@ startupmessage:
     ; emulated by Bernd. use different delays for this (tuned by measurement)
     LDY #190
 delayloop:
-    LDA <4,S   
+    LDA 4,S   
     BEQ done
 continue:
     TYX              ; 2 cycles
@@ -138,14 +138,14 @@ continue:
 continue2:
     DEX              ;   2 cycles
     BNE continue2    ;   2 or 3 (if taken) cycles
-    DEC A            ; 2 cycles
+    DEC              ; 2 cycles
     BNE continue     ; 2 or 3 (if taken) cycles
 done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000                     
     ; take down parameters, fix return address and return
-    LDA <2,S
-    STA <4,S
+    LDA 2,S
+    STA 4,S
     PLA 
-    STA <1,S
+    STA 1,S
     RTL
     
 ; ----------------- Serial communication ------------------    
@@ -181,13 +181,13 @@ done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000
     PLB      
     ; must wait until the receiver is ready to accept new data (incomming CTS must be low)
 waitforready:
-    BIT |0
+    BIT 0
     BVS waitforready
     ; prepare the other output bits for the io port
     LDA #$FF
     PHA
     ; send one byte bit by bit (1 start bit, 1 stop bit, no parity)
-    LDA <4+2,S
+    LDA 4+2,S
     CLC         
     JSR sendreceivebit ; start bit    6 cycles
     ROR A              ;              2 cycles                
@@ -215,16 +215,16 @@ waitforready:
     ; restore DBR
     PLB
     ; take down stack and return
-    LDA <2,S
-    STA <4,S
+    LDA 2,S
+    STA 4,S
     PLA 
-    STA <1,S
+    STA 1,S
     RTL
   
     ; -- receive one byte via serial
 ~~receive:
     ; save data bank register 
-    PHB      
+    PHB
     ; switch to 8 bit accu/memory
     LDA #0  ; make sure high byte is 0 from now on, so TAX and TAY work
     SEP #$20 
@@ -243,21 +243,21 @@ waitforready:
     PLB
     ; notify the sender that we are ready to accept data
     LDA #$FD      ; set RTS low
-    STA |0
+    STA 0
     ; Implement an edge-detector with latency jitter as low as possible.
     ; On real CPU the uncertainty is about 9 clocks which is below 0.1 bits
     ; On Bernd the uncertainty is about 150 clocks (12.5us) which is a higher
     ; relative jitter for a 19200 bit/s signal, but maybe OK as well.
 state_RTS_active:
     CLC           ; carry flag for timeout   
-    BIT |0                                   
+    BIT 0                                   
     BPL startbitdetected                       
     LDA #256-timeout1                        
 waitforstartbit:
-    BIT |0                                   ; 4      (55) 
+    BIT 0                                    ; 4      (55) 
     BPL startbitdetected                     ; 2      (21)
     ADC #1        ; progress timeout         ; 2      (71)
-    BIT |0                                   ; 4      (55)
+    BIT 0                                    ; 4      (55)
     BPL startbitdetected                     ; 2  2   (21)
     BCC waitforstartbit                      ; 3      (43)
 timeoutreached:
@@ -274,21 +274,21 @@ startbitdetected:
     ; set RTS high
 set_RTS_inactive:
     LDA #$FF      
-    STA |0
+    STA 0
     ; second implementation of the edge-detector. this is used
     ; in the state when RTS is already de-asserted.
     ; Then the sender should stop as soon as possible. but may
     ; send a few more bytes.
 state_RTS_inactive:
     CLC           ; carry flag for timeout   
-    BIT |0                                   
+    BIT 0                                   
     BPL startbitdetected2                    
     LDA #256-timeout2                          
 waitforstartbit2:                            
-    BIT |0                                   
+    BIT 0                                   
     BPL startbitdetected2                    
     ADC #1        ; progress timeout         
-    BIT |0                                    
+    BIT 0                                    
     BPL startbitdetected2                    
     BCC waitforstartbit2                     
 timeoutreached2:
@@ -307,7 +307,7 @@ donereceive:
     BEQ returnfromreceive  ; when nothing here
     LDA >numconsumed
     TAX
-    INC A
+    INC 
     STA >numconsumed       ; progress numconsumed counter
     LDA >buffereddata,X
     LDY #0
@@ -342,7 +342,7 @@ delay5:
     NOP                                                  ; 2  56
 startreceivebyte:
     ; pass down the pattern for other output bits 
-    LDA <3,S                                             ; 4  60
+    LDA 3,S                                              ; 4  60
     PHA                                                  ; 3  63
     ; prepare outgoing TX bits to be all idle
     LDA #$FF                                             ; 2  65
@@ -373,14 +373,14 @@ startreceivebyte:
     CMP #254
     BEQ receiveandstoredone
     TAX
-    INC A
+    INC 
     STA >numbuffered
     TYA
     STA >buffereddata,X
 receiveandstoredone:
     ; wait until input reaches idle level
     ; (either from stop bit, or when last data bit is high)
-    BIT |0                                  
+    BIT 0                                  
     BPL receiveandstoredone                   
     RTS
     LONGA ON
@@ -403,9 +403,9 @@ sendreceivebit:
     TAY                                                  ; 2   2 
     ; bild output data with carry flag in bit 0,
     ; the rest is taken from stack parameter
-    LDA <3,S                                             ; 4   6
+    LDA 3,S                                              ; 4   6
     ROL                                                  ; 2   8
-    STA |0         ; write to output port                ; 4  12
+    STA 0          ; write to output port                ; 4  12
     ; detect underlying hardware
     CLC                                                  ; 2  14
     XCE                                                  ; 2  16
@@ -435,8 +435,8 @@ donedelay:
     NOP                                                  ; 2  79
     BRA delay3cycles2                                    ; 3  82 
 delay3cycles2:
-    LDA |0         ; fetch input                         ; 4  86
-    ASL A  ; put input bit into carry flag               ; 2  88
+    LDA 0          ; fetch input                         ; 4  86
+    ASL    ; put input bit into carry flag               ; 2  88
     TYA    ; repair A and return                         ; 2  90
     RTS                                                  ; 6  96
     LONGA ON
@@ -454,7 +454,7 @@ sendstrloop:
     AND #$00FF
     BEQ sendstrend
     PHA
-    JSL ~~send
+    JSL >~~send
     INC <4
     BNE sendstrloop
     INC <6
@@ -520,7 +520,7 @@ writeflashloop:
     DEY
     LDA [<60],Y
     TAX                     
-    JSL executefromstackframe  
+    JSL >executefromstackframe  
     TYX
     BNE writeflashloop
     ; test how many bytes were written correctly    

@@ -1,0 +1,86 @@
+Reduced instruction set and address modes for tutorial assembler
+
+addressing modes                            examples
+    relative: 8 or 16 bit                      BEQ done
+    no operand: implicit                       INC
+    absolute: 16 bit  (DBR is always 0)        STA 54243
+    absolute,x                                 LDA 4234,x
+    absolute,y                                 LDA 234,y
+    long: 24 bit                               LDA >$800000
+    long,x: 24 bit                             LDA >$811000,x
+    direct offset                              LDX <0
+    stack offset                               STA 7,s
+    immediate 16 bit                           LDA #4711
+
+   
+supported address mode table:
+      rel   impl  a     a,x   a,y   l     l,x   d     d,s   # 
+ADC               6D    7D    79    6F    7F    65    63    69
+AND               2D    3D    39    2F    3F    25    23    29
+ASL         0A    0E    1E                      06           
+BCC   90
+BCS   B0
+BEQ   F0
+BIT               2C    3C                      24          89
+BMI   30
+BNE   D0
+BPL   10
+BRA   80
+BRL   82*
+BVC   50
+BVS   70
+CLC         18
+CLV         B8
+CMP               CD    DD    D9    CF    DF    C5    C3    C9
+CPX               EC                            E4          E0
+CPY               CC                            C4          C0
+DEC         3A    CE    DE                      C6          
+DEX         CA
+DEY         88
+EOR               4D    5D    59    4F    5F    45    43    49
+INC         1A    EE    FE                      E6
+INX         E8
+INY         C8
+JMP                                 5C
+JSL                                 22
+LDA               AD    BD    B9    AF    BF    A5    A3    A9
+LDX               AE          BE                A6          A2
+LDY               AC    BC                      A4          A0
+LSR         4A    4E    5E                      46
+NOP         EA
+ORA               0D    1D    19    0F    1F    05    03    09
+PEA                                                         F4
+PHA         48
+PHD         0B
+PHX         DA
+PHY         5A
+PLA         68
+PLD         2B
+PLX         FA
+PLY         7A
+ROL         2A    2E    3E                      26
+ROR         6A    6E    7E                      66
+RTL         6B
+SBC               ED    FD    F9    EF    FF    E5    E3    E9
+SEC         38
+STA               8D    9D    99    8F    9F    85    83
+ST8               8D*   9D*   99*   8F*   9F*   85*   83*    
+STP         DB
+STX               8E                            86
+STY               8C                            84
+STZ               9C    9E                      64          
+TAX         AA
+TAY         A8
+TCD         5B
+TCS         1B
+TDC         7B
+TRB               1C                            14
+TSB               0C                            04
+TSC         3B
+TSX         BA
+TXA         8A
+TXS         9A
+TXY         9B
+TYA         98
+TYX         BB
+XBA         EB

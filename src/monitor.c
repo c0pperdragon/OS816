@@ -147,18 +147,20 @@ void processline(char* line, unsigned int* hexoffset)
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6);
     #asm
+        PHD
         BRA pushreturnaddress
     docall:
-        SEP #$20    
+        SEP #$20
         LDA %%address+2
         PHA
         REP #$20    
         LDA %%address
-        DEA
+        DEC
         PHA
         RTL
     pushreturnaddress:
         JSL docall
+        PLD
     #endasm      
     }
     else if (cmd=='C') {         // CLEAR RAM BANK 0 (up to the stack pointer)
