@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OS816 assembler</title>
+    <script src="asm.js"></script>
+    <script>
+        function clickpreprocess()
+        {
+            document.getElementById('binary').value =
+                preprocess(document.getElementById('assembly').value);
+        }
+        function clickassemble()
+        {
+            document.getElementById('binary').value =
+                assemble(document.getElementById('assembly').value);
+        }
+    </script>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <td><b>OS816 assembly code</b></td>
+        <td>
+            <button type="button" onclick="clickpreprocess()">Preprocess</button>
+            <button type="button" onclick="clickassemble()">Assemble</button>
+        </td>
+      </tr>
+      <tr>
+        <td><textarea id="assembly" rows="30" cols="50"></textarea></td>
+        <td><textarea id="binary" rows="30" cols="50"></textarea></td>
+      </tr>
+    </table> 
+  </body>
+</html>
