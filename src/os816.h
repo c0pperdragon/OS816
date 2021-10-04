@@ -11,9 +11,10 @@ void softreset(void);
 void sleep(unsigned int milliseconds);
 
 // Communication via the serial interface (with hardware handshake)
-void send(int data);
+void send(unsigned int data);
 int receive(void);   // returns either the next byte or -1 if nothing available
 void sendstr(const char* str);
+void sendnum(unsigned int value);
 
 // Facility to write to the flash area
 unsigned int writeflash(char* target, void* data, unsigned int size);

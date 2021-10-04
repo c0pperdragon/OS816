@@ -37,9 +37,10 @@ BOOT SECTION        ; needs to be located at $FFF000
     JMP ~~eraseflash           ; FFF012
     JMP ~~topaddress_flash     ; FFF015
     JMP ~~topaddress_ram       ; FFF018
+    JMP ~~sendnum              ; FFF01B
     
 ; -------------------- STARTUP -------------------------------
-~~softreset:
+~~softreset
     ; 16-bit mode for accu and index registers
     ; clear all other status flags as well
     REP #$FF   
@@ -75,7 +76,7 @@ BOOT SECTION        ; needs to be located at $FFF000
     BCS skipstartupdelay
     PEA #100
     JSL >~~sleep
-skipstartupdelay:
+skipstartupdelay
 
     ; when there is no user program at all directly go to monitor
     LDA >$800000
@@ -98,23 +99,23 @@ skipstartupdelay:
     JSL >~~receive
     CMP #0
     BMI startuserprogram
-startmonitor:
+startmonitor
     JSL >~~monitor
     ; when there is a user program available then, fire it up
     LDA >$800000
     CMP #$FFFF
     BEQ startmonitor
-startuserprogram:
+startuserprogram
     JSL >$800000
     BRA ~~softreset
 
-startupmessage:
+startupmessage
     DB "OS816 1.1 - press any key to enter monitor."
     DB 10,0
     
     
 ; ----------------- Tuned delay loop ----------------------
-~~sleep:
+~~sleep
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          16-bit parameter: milliseconds
@@ -128,19 +129,19 @@ startupmessage:
     BCC delayloop
     ; emulated by Bernd. use different delays for this (tuned by measurement)
     LDY #190
-delayloop:
+delayloop
     LDA 4,S   
     BEQ done
-continue:
+continue
     TYX              ; 2 cycles
     TYX              ; 2 cycles
     TYX              ; 2 cycles
-continue2:
+continue2
     DEX              ;   2 cycles
     BNE continue2    ;   2 or 3 (if taken) cycles
     DEC              ; 2 cycles
     BNE continue     ; 2 or 3 (if taken) cycles
-done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000                     
+done                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000                     
     ; take down parameters, fix return address and return
     LDA 2,S
     STA 4,S
@@ -166,7 +167,7 @@ done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000
 ; are left high after that. 
 
     ; -- send one byte via serial
-~~send:
+~~send
     ; initial stack layout:  
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          data to send (in lower bits only)
@@ -180,7 +181,7 @@ done:                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000
     PHA
     PLB      
     ; must wait until the receiver is ready to accept new data (incomming CTS must be low)
-waitforready:
+waitforready
     BIT 0
     BVS waitforready
     ; prepare the other output bits for the io port
@@ -222,7 +223,7 @@ waitforready:
     RTL
   
     ; -- receive one byte via serial
-~~receive:
+~~receive
     ; save data bank register 
     PHB
     ; switch to 8 bit accu/memory
@@ -248,21 +249,21 @@ waitforready:
     ; On real CPU the uncertainty is about 9 clocks which is below 0.1 bits
     ; On Bernd the uncertainty is about 150 clocks (12.5us) which is a higher
     ; relative jitter for a 19200 bit/s signal, but maybe OK as well.
-state_RTS_active:
+state_RTS_active
     CLC           ; carry flag for timeout   
     BIT 0                                   
     BPL startbitdetected                       
     LDA #256-timeout1                        
-waitforstartbit:
+waitforstartbit
     BIT 0                                    ; 4      (55) 
     BPL startbitdetected                     ; 2      (21)
     ADC #1        ; progress timeout         ; 2      (71)
     BIT 0                                    ; 4      (55)
     BPL startbitdetected                     ; 2  2   (21)
     BCC waitforstartbit                      ; 3      (43)
-timeoutreached:
+timeoutreached
     BRA set_RTS_inactive
-startbitdetected:
+startbitdetected
     LDA #$FE                                 ; 2  4
     PHA                                      ; 3  7
     JSR receiveandstorebyte                  ; 6  13
@@ -272,28 +273,28 @@ startbitdetected:
     CMP #200
     BNE state_RTS_active
     ; set RTS high
-set_RTS_inactive:
+set_RTS_inactive
     LDA #$FF      
     STA 0
     ; second implementation of the edge-detector. this is used
     ; in the state when RTS is already de-asserted.
     ; Then the sender should stop as soon as possible. but may
     ; send a few more bytes.
-state_RTS_inactive:
+state_RTS_inactive
     CLC           ; carry flag for timeout   
     BIT 0                                   
     BPL startbitdetected2                    
     LDA #256-timeout2                          
-waitforstartbit2:                            
+waitforstartbit2                            
     BIT 0                                   
     BPL startbitdetected2                    
     ADC #1        ; progress timeout         
     BIT 0                                    
     BPL startbitdetected2                    
     BCC waitforstartbit2                     
-timeoutreached2:
+timeoutreached2
     BRA donereceive
-startbitdetected2:
+startbitdetected2
     LDA #$FF
     PHA
     JSR receiveandstorebyte                  
@@ -301,7 +302,7 @@ startbitdetected2:
     BRA state_RTS_inactive
     ; after operation, may or may not have data in buffer
     ; when numbuffered > 0, there is something usable
-donereceive:
+donereceive
     LDY #$FFFF             ; default value for no data
     LDA >numbuffered
     BEQ returnfromreceive  ; when nothing here
@@ -312,7 +313,7 @@ donereceive:
     LDA >buffereddata,X
     LDY #0
     TAY                    ; 0-expand to 16 bit
-returnfromreceive:
+returnfromreceive
     REP #$20 
     LONGA ON
     TYA
@@ -324,23 +325,23 @@ returnfromreceive:
     ; after input level is inactive (high) again.
     ; With 0 - 9 clocks jitter, need to do the first sampling at
     ; 152 clocks after the flank of the start bit
-receiveandstorebyte:  
+receiveandstorebyte  
     LONGA OFF                                            ;    13
     ; add some delay to get the first bit sample point correct
     ; detect underlying hardware
     CLC                                                  ; 2  15
     XCE                                                  ; 2  17
     BCC true65c816_2                       ; branch taken: 3  20
-berndemulation_2:
+berndemulation_2
     BRA startreceivebyte
-true65c816_2:
+true65c816_2
     LDX #6                                               ; 3  23
-delay5: 
+delay5 
     DEX                                                  ; 2  25 30 35 40 45 50 
     BNE delay5                                          ; 2/3 28 33 38 43 48 52 
     NOP                                                  ; 2  54
     NOP                                                  ; 2  56
-startreceivebyte:
+startreceivebyte
     ; pass down the pattern for other output bits 
     LDA 3,S                                              ; 4  60
     PHA                                                  ; 3  63
@@ -377,7 +378,7 @@ startreceivebyte:
     STA >numbuffered
     TYA
     STA >buffereddata,X
-receiveandstoredone:
+receiveandstoredone
     ; wait until input reaches idle level
     ; (either from stop bit, or when last data bit is high)
     BIT 0                                  
@@ -399,7 +400,7 @@ receiveandstoredone:
     ; For Bernd emulation:
     ;   Speed tuned by measurement
     LONGA OFF
-sendreceivebit:
+sendreceivebit
     TAY                                                  ; 2   2 
     ; bild output data with carry flag in bit 0,
     ; the rest is taken from stack parameter
@@ -410,46 +411,46 @@ sendreceivebit:
     CLC                                                  ; 2  14
     XCE                                                  ; 2  16
     BCC true65c816                         ; branch taken: 3  19
-berndemulation:
+berndemulation
     NOP
     NOP
     NOP
     NOP
     LDX #2
-delay1:
+delay1
     DEX                                                  
     BNE delay1
     BRA donedelay
-true65c816:
+true65c816
     LDX #5                                               ; 3  22
-delay2:
+delay2
     NOP                                                  ; 2  24 34 44 54 64 
     BRA delay3cycles                                     ; 3  27 37 47 57 67 
-delay3cycles:
+delay3cycles
     DEX                                                  ; 2  29 39 49 59 69 
     BNE delay2                                          ; 3/2 32 42 52 62 71
-donedelay:
+donedelay
     NOP                                                  ; 2  73
     NOP                                                  ; 2  75
     NOP                                                  ; 2  77
     NOP                                                  ; 2  79
     BRA delay3cycles2                                    ; 3  82 
-delay3cycles2:
+delay3cycles2
     LDA 0          ; fetch input                         ; 4  86
     ASL    ; put input bit into carry flag               ; 2  88
     TYA    ; repair A and return                         ; 2  90
     RTS                                                  ; 6  96
     LONGA ON
 
-; ----------- Simple convenience function --------------------    
+; ----------- Convenience function to send a string --------------------    
     ; stack layout:
     ;   SP+1, SP+2, SP+3        return address
     ;   SP+4, SP+5, SP+6, SP+7  pointer to string
-~~sendstr:
+~~sendstr
     TSC
     PHD
     TCD
-sendstrloop:
+sendstrloop
 	LDA	[<4]
     AND #$00FF
     BEQ sendstrend
@@ -459,7 +460,7 @@ sendstrloop:
     BNE sendstrloop
     INC <6
     BNE sendstrloop
-sendstrend: 
+sendstrend 
     LDA <1
     STA <5
     LDA <2
@@ -469,8 +470,49 @@ sendstrend:
     PLA
     RTL 
         
+; --- Convenience function to send a decimal representation of a number ----    
+    ; stack layout:
+    ;   SP+1, SP+2, SP+3        return address
+    ;   SP+4, SP+5              unsigned 16 bit number
+~~sendnum
+    LDX #8    ; digit position in case of value=0
+    LDA 4,s
+    BEQ sendnumloop
+    LDX #-2
+skipdigitsloop
+    INX
+    INX
+    CMP >digits,x
+    BCC skipdigitsloop    
+sendnumloop
+    LDY #47  ; one lower than "0"
+    LDA 4,s
+digitloop
+    INY      ; increase digit
+    SEC
+    SBC >digits,x
+    BCS digitloop
+    ADC >digits,x
+    STA 4,s
+    PHX  ; conserve during call
+    PHY  
+    JSL >~~send
+    PLX
+    INX
+    INX
+    LDA >digits,x
+    BNE sendnumloop
+    LDA 2,s
+    STA 4,s
+    LDA 1,s
+    STA 3,s
+    PLA
+    RTL
+digits:
+    DW 10000,1000,100,10,1,0
+    
 ; ---------------- Write to FLASH -------------------------
-~~writeflash:
+~~writeflash
 ; stack frame (accessed via D):  
 ;   D+1 - D+50                mirrored code    
 ;   D+51, D+52                previous D 
@@ -503,7 +545,7 @@ sendstrend:
     BPL skipcopyloop    ; destination end is >= 87F000   
     ; transfer program to RAM
     LDX #30
-transferaccesscode:
+transferaccesscode
     LDA >writebytetoflash,X
     STA <1,X
     DEX
@@ -516,7 +558,7 @@ transferaccesscode:
     ; use 8-bit accu/memory access during loop
     SEP #$20
     LONGA OFF
-writeflashloop:    
+writeflashloop    
     DEY
     LDA [<60],Y
     TAX                     
@@ -526,7 +568,7 @@ writeflashloop:
     ; test how many bytes were written correctly    
     LDX #0
     LDY <64 
-verifyloop:
+verifyloop
     INY
     DEY
     BEQ verifydone
@@ -536,11 +578,11 @@ verifyloop:
     BNE verifyloop
     INX
     BRA verifyloop
-verifydone:
+verifydone
     ; revert to 16 bit
     REP #$20
     LONGA ON
-skipcopyloop:
+skipcopyloop
     ; transfer return address to where it is needed
     LDA <53
     STA <63
@@ -563,7 +605,7 @@ skipcopyloop:
 ; D must point to the stack frame as specified by writeflash. 
 ; Register widths A/M 8 bit, X/Y 16 bit
 ; Invocation by far subroutine call
-writebytetoflash:
+writebytetoflash
     LONGA OFF
     LDA #$AA                 ; 2
     STA >$805555             ; 4
@@ -573,7 +615,7 @@ writebytetoflash:
     STA >$805555             ; 4
     TXA                      ; 1
     STA [<56],Y              ; 2
-waitflashstable:
+waitflashstable
     LDA [<56],Y              ; 2
     CMP [<56],Y              ; 2
     BNE waitflashstable      ; 2
@@ -583,7 +625,7 @@ waitflashstable:
     LONGA ON                 ; 32 bytes total 
 
 ; ---------------- Erase FLASH sector ---------------------
-~~eraseflash:
+~~eraseflash
 ; stack frame (accessed via D):  
 ;   D+1 - D+50                mirrored code    
 ;   D+51, D+52                previous D 
@@ -608,7 +650,7 @@ waitflashstable:
     ; test if sector actually needs erasing
     LDA #$FFFF
     LDY #4096-2
-checkerasedloop:
+checkerasedloop
     AND [<56],Y
     DEY
     DEY
@@ -617,7 +659,7 @@ checkerasedloop:
     BEQ aftererase
     ; transfer program to RAM
     LDX #44
-transfererasecode:
+transfererasecode
     LDA >erasesector,X
     STA <1,X
     DEX
@@ -631,7 +673,7 @@ transfererasecode:
     ; revert to 16 bit
     REP #$20
     LONGA ON
-aftererase:
+aftererase
     ; transfer return address to where it is needed
     LDA <53
     STA <57
@@ -649,7 +691,7 @@ aftererase:
 ; D must point to the stack frame as specified by eraseflash. 
 ; Register widths A/M 8 bit, X/Y 16 bit
 ; Invocation by far subroutine call
-erasesector:
+erasesector
     LONGA OFF
     LDA #$AA                 ; 2
     STA >$805555             ; 4
@@ -663,7 +705,7 @@ erasesector:
     STA >$802AAA             ; 4
     LDA #$30                 ; 2
     STA [<56]                ; 2
-waiterasestable:
+waiterasestable
     LDA [<56]                ; 2
     CMP [<56]                ; 2
     BNE waiterasestable      ; 2
@@ -681,7 +723,7 @@ waiterasestable:
     ; To work correctly, the accu/memory length must be set to 8 bit, and
     ; the accu will also be overwritten.
     LONGA OFF
-executefromstackframe:
+executefromstackframe
     LDA #0
     PHA
     PHD
@@ -691,12 +733,12 @@ executefromstackframe:
 ; -------------------- MEMORY CONFIGURATION QUERY ----------------------------
 ; User modifyable flash range (everything except boot loader) 
 ; extends from $800000 to $87F000 (508KB)
-~~topaddress_flash:
+~~topaddress_flash
     LDX #$0087
     LDA #$F000
     RTL
 ; RAM range is 512KB starting from 0
-~~topaddress_ram:
+~~topaddress_ram
     LDX #$0008
     LDA #$0000
     RTL
@@ -710,18 +752,18 @@ RESET SECTION             ; needs to be located at $FFFFF0
     ; The original CPU will come up in emulation mode which has a different
     ; memory map so it will always access bank $FF instead of default 0. 
     ; In this case we must switch to the true ROM bank and turn off emulation.
-ORIGINAL65C816:           ; FFFFF0
+ORIGINAL65C816            ; FFFFF0
     JMP >TOHIGHBANK  
-TOHIGHBANK:               ; FFFFF4
+TOHIGHBANK                ; FFFFF4
     CLC
     XCE
     REP #$30 
     ; Bernd emulation will not use the reset vectors, but will directly jump to this
     ; location with emulation already turned off and all registers in 16bit mode
-BERND:                    ; FFFFF8
+BERND                     ; FFFFF8
     JMP >~~softreset
     ; The reset vector for the 65C816
-RESETVECTOR:              ; FFFFFC
+RESETVECTOR               ; FFFFFC
     DW $FFF0
     DW 0                  ; padding
     

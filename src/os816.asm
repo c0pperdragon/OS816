@@ -17,6 +17,7 @@
     xdef ~~eraseflash
     xdef ~~topaddress_flash
     xdef ~~topaddress_ram
+    xdef ~~sendnum
 ~~softreset        set $FFF000
 ~~sleep            set $FFF003
 ~~send             set $FFF006
@@ -26,6 +27,7 @@
 ~~eraseflash       set $FFF012
 ~~topaddress_flash set $FFF015
 ~~topaddress_ram   set $FFF018
+~~sendnum          set $FFF01B
 
     ; start vector on fixed address        
 LAUNCH SECTION

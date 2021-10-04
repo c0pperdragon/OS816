@@ -116,7 +116,7 @@ void processline(char* line, unsigned int* hexoffset)
         sendstr("Monitor commands. All numbers are HEX\n");
         sendstr("H                  Help (this message)\n");
         sendstr("M <addr>           Memory dump\n");
-        sendstr("W <addr> <data>    Write to memory\n");
+        sendstr("[W] <addr> <data>  Write to memory\n");
         sendstr("R <addr>           Run program\n");
         sendstr("C                  Clear RAM bank 0\n");
         sendstr("E <sectoraddress>  Erase 4K flash sector\n");
@@ -130,9 +130,11 @@ void processline(char* line, unsigned int* hexoffset)
         address = parsenumber(line, &cursor, 6);
         for (i=0; i<256; i+=16) { printdump (address+i); }
     }
-    else if (cmd=='W') {         // WRITE TO MEMORY
-        skiptospace(line, &cursor);
-        skipoverspace(line, &cursor);
+    else if (cmd=='W' ||cmd=='0') {  // WRITE TO MEMORY
+        if (cmd!='0') {
+            skiptospace(line, &cursor);
+            skipoverspace(line, &cursor);
+        }
         address = parsenumber(line, &cursor, 6);
         skipoverspace(line, &cursor);
         for (i=0; line[cursor]; i++)

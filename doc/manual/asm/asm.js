@@ -192,7 +192,7 @@ function process(tokens)
     }
     else if (mode===amode.immediate)
     {
-        if (value<0 || value>0xFF) throw "Immediate value outside 16 bit range: "+value;
+        if (value<0 || value>0xFFFF) throw "Immediate value outside 16 bit range: "+value;
         emit (value & 0xff);
         emit ((value>>8) & 0xff);
     }
