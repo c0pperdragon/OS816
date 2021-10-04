@@ -55,9 +55,27 @@ function assemble(code)
         pc = 0;
         for (linenr=0; linenr<tokenlines.length; linenr++)
         { 
-            output.push(pc.toString(16).toUpperCase().padStart(6,"0"));
-            output.push(" ");
+            var startpc = pc;
+            var start = output.length;
             process(tokenlines[linenr]); 
+            var end = output.length;
+            if (end>start)
+            {
+                if (startpc>=0x800000 && startpc<0x810000) 
+                {   // produce Intel HEX for this range
+                    output.splice(start, 0, 
+                        ":", 
+                        hex(end-start,2), 
+                        hex((startpc>>8)&0xff,2), hex(startpc&0xff,2), 
+                        "00"
+                    );
+                    output.push(hex(intelhexchecksum(output.slice(start+1)),2));
+                }
+                else 
+                {   // normal HEX dump
+                    output.splice(start, 0, hex(startpc,6), " ");
+                }
+            }
             output.push("\n");        
         }
     }
@@ -198,14 +216,14 @@ function process(tokens)
     }
     else if (mode==amode.relative && opcode===0x82)  // special treatment for long branch
     {
-        var distance = value - (pc+3);
+        var distance = value - (pc+2);
         if (distance>32767 || distance<-32768) { throw "Long branch target out of range"; }
         emit(distance & 0xff);
         emit((distance>>8) & 0xff);
     }
     else if (mode==amode.relative)
     {
-        var distance = value - (pc+2);
+        var distance = value - (pc+1);
         if (distance>127 || distance<-128) { throw "Branch target out of range"; }
         emit(distance & 0xff);
     }
@@ -230,10 +248,20 @@ function compute(expression, firstpassdefault)
 
 function emit(code)
 {
-    if (finalpass) { output.push(code.toString(16).toUpperCase().padStart(2,"0")); }
+    if (finalpass) { output.push(hex(code,2)); }
     pc++;   
 }
 
+function hex(code,digits)
+{
+    return code.toString(16).toUpperCase().padStart(digits,"0")
+}
+
+function intelhexchecksum(bytes)
+{
+    var total = bytes.reduce((a,b) => a+parseInt(b,16), 0) & 0xff;
+    return (256-total) & 0xff; 
+}
 
 const amode = 
 {
