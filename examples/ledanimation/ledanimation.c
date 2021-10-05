@@ -59,9 +59,9 @@ void animate(void)
     unsigned int animpointer = 0; 
     for (;;)
     {
-        int i = IOPORT;
+        unsigned int i = portin();
         i = i & pattern[animpointer];
-        IOPORT = (unsigned char) i;
+        portout(i);
         sleep(100);  
         animpointer=(animpointer+1)&0x0F;
     }
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     fillram((unsigned int*)0x60000, 6786,   105);
     fillram((unsigned int*)0x70000, 3274,  1412);
     // show progress by turning off all LEDs
-    IOPORT = (unsigned char) 0x00;
+    portout(0x00);
     // test RAM content 
     ok = checkram((unsigned int*)0x10000) == 1073741824
       && checkram((unsigned int*)0x20000) == 3221258240
@@ -91,7 +91,7 @@ int main(int argc, char** argv)
       ;
 
     // show progress by turning on all LEDs
-    IOPORT = (unsigned char) 0xFF;
+    portout(0xFF);
     // when everything was successfull, show animation
     if (ok) { animate(); }
     return -1;

@@ -18,6 +18,8 @@
     xdef ~~topaddress_flash
     xdef ~~topaddress_ram
     xdef ~~sendnum
+    xdef ~~portout
+    xdef ~~portin
 ~~softreset        set $FFF000
 ~~sleep            set $FFF003
 ~~send             set $FFF006
@@ -28,6 +30,8 @@
 ~~topaddress_flash set $FFF015
 ~~topaddress_ram   set $FFF018
 ~~sendnum          set $FFF01B
+~~portout          set $FFF01E
+~~portin           set $FFF021
 
     ; start vector on fixed address        
 LAUNCH SECTION

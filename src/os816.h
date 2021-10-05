@@ -16,6 +16,10 @@ int receive(void);   // returns either the next byte or -1 if nothing available
 void sendstr(const char* str);
 void sendnum(unsigned int value);
 
+// access to IO port
+void portout(unsigned int data);
+unsigned int portin(void);
+
 // Facility to write to the flash area
 unsigned int writeflash(char* target, void* data, unsigned int size);
 void eraseflash(char* sectoraddress);
@@ -23,6 +27,3 @@ void eraseflash(char* sectoraddress);
 // Memory configuration queries
 void* topaddress_flash(void);
 void* topaddress_ram(void);
-
-// raw access to IO port
-#define IOPORT (*((unsigned char*)0x7F0000))

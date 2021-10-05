@@ -10,9 +10,10 @@
     
 ; --------------------- RAM layout ---------------------------- 
 stacktop            set $00FEFF   ; right below the 256 bytes for serial handling
-buffereddata        set $00FF00   ; 254 bytes
-numbuffered         set $00FFFE   ; 8 bit
-numconsumed         set $00FFFF   ; 8 bit
+buffereddata        set $00FF00   ; 253 bytes
+numbuffered         set $00FFFD   ; 8 bit
+numconsumed         set $00FFFE   ; 8 bit
+outportshadow       set $00FFFF   ; 8 bit 
 
 ; The timeouts for waiting for incomming data after asserting RTS and then also after
 ; de-asserting the line again. 
@@ -38,7 +39,9 @@ BOOT SECTION        ; needs to be located at $FFF000
     JMP ~~topaddress_flash     ; FFF015
     JMP ~~topaddress_ram       ; FFF018
     JMP ~~sendnum              ; FFF01B
-    
+    JMP ~~portout              ; FFF01E
+    JMP ~~portin               ; FFF021
+
 ; -------------------- STARTUP -------------------------------
 ~~softreset
     ; 16-bit mode for accu and index registers
@@ -50,6 +53,7 @@ BOOT SECTION        ; needs to be located at $FFF000
     LONGA OFF
     LDA #$FF
     STA >$7F0000
+    STA >outportshadow
     REP #$20 
     LONGA ON
             
@@ -66,7 +70,7 @@ BOOT SECTION        ; needs to be located at $FFF000
     STA >buffereddata
     LDX #buffereddata
     LDY #buffereddata+1
-    LDA #254
+    LDA #253
     MVN #^buffereddata,#^buffereddata ;clear-copy bytes
     
     ; for genuine 65c816 add a small delay to stay clear of 
@@ -185,7 +189,7 @@ waitforready
     BIT 0
     BVS waitforready
     ; prepare the other output bits for the io port
-    LDA #$FF
+    LDA >outportshadow
     PHA
     ; send one byte bit by bit (1 start bit, 1 stop bit, no parity)
     LDA 4+2,S
@@ -243,7 +247,8 @@ waitforready
     PHA
     PLB
     ; notify the sender that we are ready to accept data
-    LDA #$FD      ; set RTS low
+    LDA >outportshadow
+    AND #$FD      ; set RTS low
     STA 0
     ; Implement an edge-detector with latency jitter as low as possible.
     ; On real CPU the uncertainty is about 9 clocks which is below 0.1 bits
@@ -264,9 +269,10 @@ waitforstartbit
 timeoutreached
     BRA set_RTS_inactive
 startbitdetected
-    LDA #$FE                                 ; 2  4
-    PHA                                      ; 3  7
-    JSR receiveandstorebyte                  ; 6  13
+    LDA >outportshadow                       ; 5  5
+    AND #$FD      ; keep RTS low             ; 2  7
+    PHA                                      ; 3  10
+    JSR receiveandstorebyte                  ; 6  16
     PLA
     ; when buffer is not too full, keep RTS active
     LDA >numbuffered
@@ -274,7 +280,7 @@ startbitdetected
     BNE state_RTS_active
     ; set RTS high
 set_RTS_inactive
-    LDA #$FF      
+    LDA >outportshadow
     STA 0
     ; second implementation of the edge-detector. this is used
     ; in the state when RTS is already de-asserted.
@@ -295,7 +301,7 @@ waitforstartbit2
 timeoutreached2
     BRA donereceive
 startbitdetected2
-    LDA #$FF
+    LDA >outportshadow
     PHA
     JSR receiveandstorebyte                  
     PLA
@@ -326,19 +332,20 @@ returnfromreceive
     ; With 0 - 9 clocks jitter, need to do the first sampling at
     ; 152 clocks after the flank of the start bit
 receiveandstorebyte  
-    LONGA OFF                                            ;    13
+    LONGA OFF                                            ;    16
     ; add some delay to get the first bit sample point correct
     ; detect underlying hardware
-    CLC                                                  ; 2  15
-    XCE                                                  ; 2  17
-    BCC true65c816_2                       ; branch taken: 3  20
+    CLC                                                  ; 2  18
+    XCE                                                  ; 2  20
+    BCC true65c816_2                       ; branch taken: 3  23
 berndemulation_2
     BRA startreceivebyte
 true65c816_2
-    LDX #6                                               ; 3  23
+    LDX #5                                               ; 3  26
 delay5 
-    DEX                                                  ; 2  25 30 35 40 45 50 
-    BNE delay5                                          ; 2/3 28 33 38 43 48 52 
+    DEX                                                  ; 2  28 33 38 43 48  
+    BNE delay5                                          ; 2/3 31 36 41 46 50  
+    NOP                                                  ; 2  52
     NOP                                                  ; 2  54
     NOP                                                  ; 2  56
 startreceivebyte
@@ -371,7 +378,7 @@ startreceivebyte
     PLA
     ; store the data if there is space left
     LDA >numbuffered
-    CMP #254
+    CMP #253
     BEQ receiveandstoredone
     TAX
     INC 
@@ -391,7 +398,7 @@ receiveandstoredone
     ; The A register needs to be conserved during this.
     ; The caller prepares DBR to point to the IO range.
     ; This subroutine uses 8-bit accu/memory. Calling is done with near JSR.
-    ; The other bits for output port are taken from the stake (just above return address).
+    ; The other bits for output port are taken from the stack (just above return address).
     ; For real 86c816:
     ;   To get the 115200 baud with 12 Mhz clock, each bits needs to take about
     ;   104 clocks. With 8 clocks used by the caller, this function is tuned to 
@@ -405,37 +412,28 @@ sendreceivebit
     ; bild output data with carry flag in bit 0,
     ; the rest is taken from stack parameter
     LDA 3,S                                              ; 4   6
-    ROL                                                  ; 2   8
-    STA 0          ; write to output port                ; 4  12
+    AND #$FE                                             ; 2   8
+    ADC #0                                               ; 2  10
+    STA 0          ; write to output port                ; 4  14
     ; detect underlying hardware
-    CLC                                                  ; 2  14
-    XCE                                                  ; 2  16
-    BCC true65c816                         ; branch taken: 3  19
+    CLC                                                  ; 2  16
+    XCE                                                  ; 2  18
+    BCC true65c816                         ; branch taken: 3  21
 berndemulation
-    NOP
-    NOP
-    NOP
-    NOP
     LDX #2
 delay1
     DEX                                                  
     BNE delay1
+    NOP
     BRA donedelay
 true65c816
-    LDX #5                                               ; 3  22
+    LDX #11                                              ; 3  24
 delay2
-    NOP                                                  ; 2  24 34 44 54 64 
-    BRA delay3cycles                                     ; 3  27 37 47 57 67 
-delay3cycles
-    DEX                                                  ; 2  29 39 49 59 69 
-    BNE delay2                                          ; 3/2 32 42 52 62 71
+    DEX                                                  ; 2  26 31 36 41 46 51 56 61 66 71 76
+    BNE delay2                                          ; 3/2 29 34 39 44 49 54 59 64 69 74 78 
 donedelay
-    NOP                                                  ; 2  73
-    NOP                                                  ; 2  75
-    NOP                                                  ; 2  77
-    NOP                                                  ; 2  79
-    BRA delay3cycles2                                    ; 3  82 
-delay3cycles2
+    NOP                                                  ; 2  80
+    NOP                                                  ; 2  82
     LDA 0          ; fetch input                         ; 4  86
     ASL    ; put input bit into carry flag               ; 2  88
     TYA    ; repair A and return                         ; 2  90
@@ -510,6 +508,37 @@ digitloop
     RTL
 digits:
     DW 10000,1000,100,10,1,0
+    
+; -------------------- PORT IO functions -------------------
+    ; stack layout:
+    ;   SP+1, SP+2, SP+3        return address
+    ;   SP+4, SP+5              unsigned 16 bit number
+~~portout
+    SEP #$20
+    LONGA OFF
+    LDA 4,s
+    STA >$7F0000
+    ORA #$03   ; serial expects both its output bits to be high here 
+    STA >outportshadow
+    REP #$20
+    LONGA ON
+    LDA 2,s
+    STA 4,s
+    LDA 1,s
+    STA 3,s
+    PLA
+    RTL
+    
+    ; stack layout: only return address
+~~portin
+    SEP #$20
+    LONGA OFF
+    LDA >$7F0000
+    REP #$20
+    LONGA ON
+    AND #$00FF
+    RTL
+    
     
 ; ---------------- Write to FLASH -------------------------
 ~~writeflash
