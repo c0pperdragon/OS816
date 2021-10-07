@@ -59,9 +59,7 @@ void animate(void)
     unsigned int animpointer = 0; 
     for (;;)
     {
-        unsigned int i = portin();
-        i = i & pattern[animpointer];
-        portout(i);
+        portout(pattern[animpointer]);
         sleep(100);  
         animpointer=(animpointer+1)&0x0F;
     }
