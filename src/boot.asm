@@ -543,7 +543,7 @@ digits:
 ; ---------------- Write to FLASH -------------------------
 ~~writeflash
 ; stack frame (accessed via D):  
-;   D+1 - D+50                mirrored code    
+;   D+1 - D+30                mirrored code    
 ;   D+51, D+52                previous D 
 ;   D+53, D+54, D+55          return address
 ;   D+56, D+57, D+58, D+59    destination address
@@ -556,30 +556,30 @@ digits:
     SBC #50
     TCS
     TCD
-    ; compute last byte address of destination
-    LDA <64
-    DEA      ; length can be considered >=1 here
-    CLC
-    ADC <56    
-    STA <10 ; tmp
-    LDA <58
-    ADC #0
-    STA <12 ; tmp
-    ; check if outside bounds
-    LDX #0
-    LDA <57    
-    BPL skipcopyloop    ; destination start is < 800000
-    LDA <11
-    CMP #$87F0      
-    BPL skipcopyloop    ; destination end is >= 87F000   
     ; transfer program to RAM
-    LDX #30
+    LDX #30-2
 transferaccesscode
     LDA >writebytetoflash,X
     STA <1,X
     DEX
     DEX
     BPL transferaccesscode    
+    ; compute last byte address of destination
+    LDA <64
+    DEA      ; length can be considered >=1 here
+    CLC
+    ADC <56    
+    STA <40 ; tmp
+    LDA <58
+    ADC #0
+    STA <42 ; tmp
+    ; check if outside bounds
+    LDX #0
+    LDA <57    
+    BPL skipcopyloop    ; destination start is < 800000
+    LDA <41
+    CMP #$87F0      
+    BPL skipcopyloop    ; destination end is >= 87F000   
     ; init counters
     LDX #0
     LDY <64
@@ -629,6 +629,7 @@ skipcopyloop
     RTL
 ; This code needs to be mirrored to RAM before executing. 
 ; parameters:
+;     A (low) must be pre-loaded with $AA
 ;     X value to be written (in lower byte)
 ;     Y offset target buffer (must be preserved)
 ; D must point to the stack frame as specified by writeflash. 
@@ -636,7 +637,6 @@ skipcopyloop
 ; Invocation by far subroutine call
 writebytetoflash
     LONGA OFF
-    LDA #$AA                 ; 2
     STA >$805555             ; 4
     LDA #$55                 ; 2
     STA >$802AAA             ; 4
@@ -651,12 +651,12 @@ waitflashstable
     CMP [<56],Y              ; 2
     BNE waitflashstable      ; 2
     RTL                      ; 1
-    LONGA ON                 ; 32 bytes total 
+    LONGA ON                 ; 30 bytes total 
 
 ; ---------------- Erase FLASH sector ---------------------
 ~~eraseflash
 ; stack frame (accessed via D):  
-;   D+1 - D+50                mirrored code    
+;   D+1 - D+44                mirrored code    
 ;   D+51, D+52                previous D 
 ;   D+53, D+54, D+55          return address
 ;   D+56, D+57, D+58, D+59    sector address
@@ -667,6 +667,14 @@ waitflashstable
     SBC #50
     TCS
     TCD
+    ; transfer program to RAM
+    LDX #44-2
+transfererasecode
+    LDA >erasesector,X
+    STA <1,X
+    DEX
+    DEX
+    BPL transfererasecode    
     ; round address down to sector boundary
     LDA <56
     AND #$F000
@@ -686,14 +694,6 @@ checkerasedloop
     BPL checkerasedloop    
     CMP #$FFFF
     BEQ aftererase
-    ; transfer program to RAM
-    LDX #44
-transfererasecode
-    LDA >erasesector,X
-    STA <1,X
-    DEX
-    DEX
-    BPL transfererasecode    
     ; use 8-bit accu/memory access for call
     SEP #$20
     LONGA OFF
@@ -717,12 +717,12 @@ aftererase
     TCS
     RTL
 ; This code needs to be mirrored to RAM before executing. 
+; A (low) must be preloaded with $AA
 ; D must point to the stack frame as specified by eraseflash. 
 ; Register widths A/M 8 bit, X/Y 16 bit
 ; Invocation by far subroutine call
 erasesector
     LONGA OFF
-    LDA #$AA                 ; 2
     STA >$805555             ; 4
     LDA #$55                 ; 2
     STA >$802AAA             ; 4
@@ -741,7 +741,7 @@ waiterasestable
     CMP [<56]                ; 2
     BNE waiterasestable      ; 2
     RTL                      ; 1
-    LONGA ON                 ; 45 bytes total 
+    LONGA ON                 ; 43 bytes total 
 
 ; ------------------ JUMP TO CODE IN STACK ------------------------------------
     ; Extremely tricky construction to jump to a code that is in the stack frame
@@ -756,6 +756,7 @@ executefromstackframe
     LDA #0
     PHA
     PHD
+    LDA #$AA
     RTL
     LONGA ON              
 
