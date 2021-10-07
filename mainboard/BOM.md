@@ -28,7 +28,7 @@
 |                       |                      | Y1          |     1 | Quarz Crystal 12MHz          | 7mm        |
 |                       |                      | RESET1      |     1 | Push Button                  | 6x6mm      |
 |                       |                      | JIN1, JOUT1 |     2 | Pin Socket 1x8               | rm 2.54mm  |
-|                       |                      | JPOWER      |     1 | Pin Socket 1x2               | rm 2.54mm  |
+|                       |                      | JPOWER      |     1 | Pin Socket 1x3               | rm 2.54mm  |
 
 
 
