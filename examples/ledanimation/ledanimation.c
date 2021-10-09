@@ -68,6 +68,8 @@ void animate(void)
 int main(int argc, char** argv)
 {
     unsigned int ok;
+    // test LEDs and input port 
+    portout(portin());    
     // fill RAM with test patterns
     fillram((unsigned int*)0x10000, 9,       47);
     fillram((unsigned int*)0x20000, 7,       99);
@@ -76,8 +78,6 @@ int main(int argc, char** argv)
     fillram((unsigned int*)0x50000, 32074, 1235);
     fillram((unsigned int*)0x60000, 6786,   105);
     fillram((unsigned int*)0x70000, 3274,  1412);
-    // show progress by turning off all LEDs
-    portout(0x00);
     // test RAM content 
     ok = checkram((unsigned int*)0x10000) == 1073741824
       && checkram((unsigned int*)0x20000) == 3221258240
@@ -88,8 +88,8 @@ int main(int argc, char** argv)
       && checkram((unsigned int*)0x70000) == 2147516416
       ;
 
-    // show progress by turning on all LEDs
-    portout(0xFF);
+    // show progress by turning off all LEDs
+    portout(0x00);
     // when everything was successfull, show animation
     if (ok) { animate(); }
     return -1;
