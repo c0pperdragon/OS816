@@ -20,8 +20,8 @@ outportshadow       set $00FFFF   ; 8 bit
 ; For true 65c816:
 ;    One timeout unit is 17 clocks, so a receive function call will
 ;    cause an idle delay of about 500 microseconds.
-timeout1             set 255
-timeout2             set 102
+timeout1             set 194
+timeout2             set 100
 ; For Bernd emulation use same values, even if the timeout would be higher than necessary
 
 BOOT SECTION        ; needs to be located at $FFF000
@@ -124,9 +124,9 @@ startupmessage
     ;   SP+1, SP+2, SP+3    return address
     ;   SP+4, SP+5          16-bit parameter: milliseconds
     
-    ; normally this loop is fine-tuned to take 10000 clocks per iteration
+    ; this loop is fine-tuned to take 10000 clocks per iteration
     ; (one-time method call overhead can not be avoided) 
-    LDY #2398    
+    LDY #1998    
     ; check if the code is running on a true 65c816 - use cycle-exact timing
     CLC
     XCE 
@@ -145,7 +145,7 @@ continue2
     BNE continue2    ;   2 or 3 (if taken) cycles
     DEC              ; 2 cycles
     BNE continue     ; 2 or 3 (if taken) cycles
-done                ; SUM = 2+2+2 + (2+3)*2398 - 1 + 2 + 3 = 10000                     
+done                ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000                     
     ; take down parameters, fix return address and return
     LDA 2,S
     STA 4,S
@@ -330,7 +330,7 @@ returnfromreceive
     ; routine will terminate as quickly as possible but only
     ; after input level is inactive (high) again.
     ; With 0 - 9 clocks jitter, need to do the first sampling at
-    ; 152 clocks after the flank of the start bit
+    ; about 126 clocks after the flank of the start bit
 receiveandstorebyte  
     LONGA OFF                                            ;    16
     ; add some delay to get the first bit sample point correct
@@ -341,22 +341,22 @@ receiveandstorebyte
 berndemulation_2
     BRA startreceivebyte
 true65c816_2
-    LDX #5                                               ; 3  26
+    LDX #2                                               ; 3  26
 delay5 
-    DEX                                                  ; 2  28 33 38 43 48  
-    BNE delay5                                          ; 2/3 31 36 41 46 50  
-    NOP                                                  ; 2  52
-    NOP                                                  ; 2  54
-    NOP                                                  ; 2  56
+    DEX                                                  ; 2  28 33    
+    BNE delay5                                          ; 2/3 31 35 
+    NOP                                                  ; 2  37
+    NOP                                                  ; 2  39
+    NOP                                                  ; 2  41
 startreceivebyte
     ; pass down the pattern for other output bits 
-    LDA 3,S                                              ; 4  60
-    PHA                                                  ; 3  63
+    LDA 3,S                                              ; 4  45
+    PHA                                                  ; 3  48
     ; prepare outgoing TX bits to be all idle
-    LDA #$FF                                             ; 2  65
-    SEC                                                  ; 2  67   
+    LDA #$FF                                             ; 2  50
+    SEC                                                  ; 2  52   
     ; transfer
-    JSR sendreceivebit ; bit 0                           ; 85 152
+    JSR sendreceivebit ; bit 0                           ; 6+68 126
     ROR A       
     JSR sendreceivebit ; bit 1
     ROR A       
@@ -400,10 +400,10 @@ receiveandstoredone
     ; This subroutine uses 8-bit accu/memory. Calling is done with near JSR.
     ; The other bits for output port are taken from the stack (just above return address).
     ; For real 86c816:
-    ;   To get the 115200 baud with 12 Mhz clock, each bits needs to take about
-    ;   104 clocks. With 8 clocks used by the caller, this function is tuned to 
-    ;   consume 96 clocks.
-    ;   Sampling the input bit is done at about 85 clocks after the call.
+    ;   To get the 115200 baud with a 10 Mhz clock, each bit needs to take about
+    ;   87 clocks. With 8 clocks used by the caller, this function is tuned to 
+    ;   consume 79 clocks.
+    ;   Sampling the input bit is done at about 68 clocks after the call.
     ; For Bernd emulation:
     ;   Speed tuned by measurement
     LONGA OFF
@@ -427,17 +427,16 @@ delay1
     NOP
     BRA donedelay
 true65c816
-    LDX #11                                              ; 3  24
+    LDX #8                                               ; 3  24
 delay2
-    DEX                                                  ; 2  26 31 36 41 46 51 56 61 66 71 76
-    BNE delay2                                          ; 3/2 29 34 39 44 49 54 59 64 69 74 78 
+    DEX                                                  ; 2  26 31 36 41 46 51 56 61
+    BNE delay2                                          ; 3/2 29 34 39 44 49 54 59 63  
 donedelay
-    NOP                                                  ; 2  80
-    NOP                                                  ; 2  82
-    LDA 0          ; fetch input                         ; 4  86
-    ASL    ; put input bit into carry flag               ; 2  88
-    TYA    ; repair A and return                         ; 2  90
-    RTS                                                  ; 6  96
+    NOP                                                  ; 2  65
+    LDA 0          ; fetch input                         ; 4  69
+    ASL    ; put input bit into carry flag               ; 2  71
+    TYA    ; repair A and return                         ; 2  73
+    RTS                                                  ; 6  79
     LONGA ON
 
 ; ----------- Convenience function to send a string --------------------    
