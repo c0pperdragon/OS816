@@ -3,7 +3,6 @@
 // Small monitor program to read/modify the memory, reprogram the flash and 
 // execute code.
 
-
 void receiveline(char* buffer, int buffersize)
 {
     int len = 0;
@@ -40,6 +39,7 @@ void skiptospace(char* buffer, unsigned int* cursor)
     while (buffer[c]!=' ' && buffer[c]!='\0') { c++; }
     *cursor = c;
 }
+
 void skipoverspace(char* buffer, unsigned int* cursor)
 {
     unsigned int c = *cursor;
@@ -52,7 +52,8 @@ unsigned long parsenumber(char* buffer, unsigned int* cursor, unsigned int maxdi
     unsigned int c = *cursor;
     unsigned long n = 0;
     unsigned int numdigits = 0;
-    while (buffer[c]!=' ' && buffer[c]!='\0') {
+    while (buffer[c]!=' ' && buffer[c]!='\0') 
+    {
         unsigned int ch = buffer[c];
         unsigned int digit = 0;
         if (ch>='0' && ch<='9') { digit = ch-'0'; }
@@ -70,7 +71,6 @@ unsigned long parsenumber(char* buffer, unsigned int* cursor, unsigned int maxdi
     *cursor = c;    
     return n;
 }
-
 
 void printhex(unsigned int value)
 {
@@ -110,27 +110,38 @@ void processline(char* line, unsigned int* hexoffset)
     unsigned int cursor=0;
     unsigned long address;
     unsigned int numbytes;
+    unsigned int numlines;
     unsigned int i;
     unsigned char cmd = line[0];   
-    if (cmd=='H') {              // HELP 
-        sendstr("Monitor commands. All numbers are HEX\n");
-        sendstr("H                  Help (this message)\n");
-        sendstr("M <addr>           Memory dump\n");
-        sendstr("[W] <addr> <data>  Write to memory\n");
-        sendstr("R <addr>           Run program\n");
-        sendstr("C                  Clear RAM bank 0\n");
-        sendstr("E <sectoraddress>  Erase 4K flash sector\n");
-        sendstr("!                  Erase all user flash\n");        
-        sendstr(":<intelhex>        Reprogram flash\n");        
-        sendstr("X                  Exit monitor\n");                
+    if (cmd=='H') 
+    {              // HELP 
+        sendstr
+        ("\
+Monitor commands. All numbers are HEX\n\
+H                  Help (this message)\n\
+M <addr> [bytes]   Memory dump\n\
+[W] <addr> <data>  Write to memory\n\
+R <addr>           Run program\n\
+C                  Clear RAM bank 0\n\
+E <sectoraddress>  Erase 4K flash sector\n\
+!                  Erase all user flash\n\
+:<intelhex>        Reprogram flash\n\
+X                  Exit monitor\n"
+        );
     }
-    else if (cmd=='M') {         // MEMORY DUMP
+    else if (cmd=='M') 
+    {         // MEMORY DUMP
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6);
-        for (i=0; i<256; i+=16) { printdump (address+i); }
+        skipoverspace(line, &cursor);
+        numbytes = parsenumber(line, &cursor, 4);
+        if (!numbytes) { numbytes=256; }
+        printdump (address);
+        for (i=16; i!=0 && i<numbytes; i+=16) { printdump (address+i); }   
     }
-    else if (cmd=='W' ||cmd=='0') {  // WRITE TO MEMORY
+    else if (cmd=='W' ||cmd=='0') 
+    {  // WRITE TO MEMORY
         if (cmd!='0') {
             skiptospace(line, &cursor);
             skipoverspace(line, &cursor);
@@ -144,7 +155,8 @@ void processline(char* line, unsigned int* hexoffset)
             skipoverspace(line, &cursor);
         }
     }
-    else if (cmd=='R') {         // RUN
+    else if (cmd=='R') 
+    {         // RUN
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6);
@@ -165,7 +177,8 @@ void processline(char* line, unsigned int* hexoffset)
         PLD
     #endasm      
     }
-    else if (cmd=='C') {         // CLEAR RAM BANK 0 (up to the stack pointer)
+    else if (cmd=='C') 
+    {         // CLEAR RAM BANK 0 (up to the stack pointer)
     #asm
         LDA #0
         STA >$000000
@@ -176,7 +189,8 @@ void processline(char* line, unsigned int* hexoffset)
         MVN #0,#0
     #endasm    
     }
-    else if (cmd=='E') {         // ERASE FLASH SECTOR
+    else if (cmd=='E') 
+    {         // ERASE FLASH SECTOR
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6) & 0xFFFFF000;
@@ -186,18 +200,21 @@ void processline(char* line, unsigned int* hexoffset)
         }
         eraseflash((void*)address);
     }
-    else if (cmd=='!') {         // ERASE ALL USER FLASH
+    else if (cmd=='!') 
+    {         // ERASE ALL USER FLASH
         for (address=0x800000; address<0x87F000; address += 0x1000) {
             eraseflash((void*)address);
         }
     }
-    else if (cmd==':') {         // Intel hex to write to flash
+    else if (cmd==':') 
+    {         // Intel hex to write to flash
         unsigned char buffer[101];
         unsigned int checksum = 0;
         cursor++;
         skipoverspace(line, &cursor);
         numbytes = (unsigned int) parsenumber(line, &cursor, 2);
-        if (numbytes>100) {
+        if (numbytes>100) 
+        {
             sendstr("\nTOO LONG\n");
             return;
         }
@@ -207,16 +224,19 @@ void processline(char* line, unsigned int* hexoffset)
         checksum += ((unsigned int)address)>>8;
         cmd = (unsigned int) parsenumber(line, &cursor, 2);
         checksum += cmd;
-        for (i=0; i<=numbytes; i++) { 
+        for (i=0; i<=numbytes; i++) 
+        { 
             unsigned int b = parsenumber(line, &cursor, 2);
             buffer[i] = b;
             checksum += b;
         }
-        if ((checksum & 0xFF)!=0) {
+        if ((checksum & 0xFF)!=0) 
+        {
             sendstr("\nCHECKSUM\n");
             return;
         }
-        if (cmd==0) { // write actual data
+        if (cmd==0) 
+        { // write actual data
             unsigned long target = *hexoffset;
             target += target;
             target += target;
@@ -232,18 +252,21 @@ void processline(char* line, unsigned int* hexoffset)
                 sendstr("\nVERIFY ERROR\n");
             }
         }
-        else if (cmd==1)             // end of HEX file
-        {
+        else if (cmd==1)           
+        {       // end of HEX file
             sendstr("\nEND\n");
         }
-        else if (cmd==2 && numbytes==2) {    // set the offset
+        else if (cmd==2 && numbytes==2) 
+        {    // set the offset
             *hexoffset = (((unsigned int) buffer[0])<<8) + buffer[1];
         }
-        else {
+        else 
+        {
             sendstr("\nUNSUPPORTED HEX COMMAND\n");
         }
     }
-    else {
+    else 
+    {
         sendstr("UNKNOWN COMMAND\n");
     }
 }
