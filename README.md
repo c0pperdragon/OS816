@@ -1,7 +1,7 @@
 # OS816
 
-A small breadboard circuit to use the 65C816 processor running at 12MHz, together with 512KB of RAM, 512KB of Flash
-and a simple but effective I/O circuitry.
+A small single board computer using the 65C816 processor running at 10MHz, together with 512KB of RAM, 
+512KB of Flash and a simple but effective I/O circuitry.
 
 I made a small boot loader program for this hardware sitting in the top 4KB of Flash to upload further
 code via a serial connection to avoid the need of swapping the Flash IC in and out of the board all the time.
@@ -25,7 +25,7 @@ especially when you want to use more than 64KB of address space.
 placed in bank 0.
 
 Points 1 and 2 are just solved with some extra logic on the board. Point 3 is solved by using the emulation bit
-to force the data bank address to $FF during startup time. Once the program is running it switches to native mode
+to force the top 8 address lines to $FF during startup time. Once the program is running it switches to native mode
 to make use of the full address range with flat regions for both RAM, IO and ROM.
 
 ## Memory map
@@ -78,7 +78,7 @@ time to enter the command line interface by pressing a key. Otherwise it will fi
 
 ## Serial interface
 
-With its simple IO hardware, the CPU is in charge of all signal handling. With a 12Mhz clock and handcrafted machine code
+With its simple IO hardware, the CPU is in charge of all signal handling. With a 10MHz clock and handcrafted machine code
 it was possible to implement a reliable serial communication that can run at 115.2kHz (1 start bit, 1 stop bit, no parity). 
 But as the CPU can not do any communication when being busy with other things it is necessary that the 
 communication partner must only send data when the CPU is prepared to receive it. A straight forward solution 
@@ -92,13 +92,17 @@ interface board with support for these signals.
 | INPUT  7     | RX    | TX      |
 | INPUT  6     | CTS   | RTS     |
 
+If your USB-to-UART interface does only have a CTS input, but no RTS output, this can also be made to work.
+Just pull the CTS input of the OS816 permanently to GND and disable flow control in the direction from the OS816 
+to your computer, assuming that your computer is fast enough so it can always process any incomming data.
+
 ## Build your own board
 
 I have created a parts list at [mouser](https://www.mouser.at/ProjectManager/ProjectDetail.aspx?AccessID=774c7f36b3) containing
 all the necessary parts to build the computer on either breadboards or on a PCB. The serial communication adapter is not part of the 
 build as there are many different options available.
 
-If there is actual demand I could also take orders for kits including a PCB and a pre-flashed memory IC. 
+If there is actual demand I could also take orders for complete kits including a PCB and a pre-flashed memory IC. 
 In this case please use my contact address in the bottom of this page.
 
 ## Contact
