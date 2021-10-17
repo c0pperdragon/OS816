@@ -96,19 +96,10 @@ If your USB-to-UART interface does only have a CTS input, but no RTS output, thi
 Just pull the CTS input of the OS816 permanently to GND and disable flow control in the direction from the OS816 
 to your computer, assuming that your computer is fast enough so it can always process any incomming data.
 
-## Build your own board
-
-I have created a parts list at [mouser](https://www.mouser.at/ProjectManager/ProjectDetail.aspx?AccessID=774c7f36b3) containing
-all the necessary parts to build the computer on either breadboards or on a PCB. The serial communication adapter is not part of the 
-build as there are many different options available.
-
-If there is actual demand I could also take orders for complete kits including a PCB and a pre-flashed memory IC. 
-In this case please use my contact address in the bottom of this page.
-
 ## Contact
 
-For questions regarding purchases, please contact me directly at:
-reinhard.grafl (at) aon.at
+For questions regarding purchases of either a pre-programmed Flash IC or a whole kit
+for self-assembly, please contact me directly at:  reinhard.grafl (at) aon.at
 
 For other questions that may also be of interest for other users, 
 please create an [issue ticket](https://github.com/c0pperdragon/OS816/issues).  
