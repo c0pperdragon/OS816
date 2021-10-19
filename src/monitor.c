@@ -194,7 +194,7 @@ X                  Exit monitor\n"
         skiptospace(line, &cursor);
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6) & 0xFFFFF000;
-        if (address<0x800000 || address>=0x87F000) {
+        if (address<0xC00000 || address>=0xC7F000) {
             sendstr("OUT OF RANGE\n");
             return;
         }
@@ -202,7 +202,7 @@ X                  Exit monitor\n"
     }
     else if (cmd=='!') 
     {         // ERASE ALL USER FLASH
-        for (address=0x800000; address<0x87F000; address += 0x1000) {
+        for (address=0xC00000; address<0xC7F000; address += 0x1000) {
             eraseflash((void*)address);
         }
     }
@@ -242,8 +242,8 @@ X                  Exit monitor\n"
             target += target;
             target += target;
             target += target;
-            target = 0x800000 + target + address;
-            if (target<0x800000 || target+numbytes>0x87F000) {
+            target = 0xC00000 + target + address;
+            if (target<0xC00000 || target+numbytes>0xC7F000) {
                 sendstr("\nOUT OF RANGE\n");
                 return;
             }

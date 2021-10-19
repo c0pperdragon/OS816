@@ -35,7 +35,7 @@
 
     ; start vector on fixed address        
 LAUNCH SECTION
-    ORG $800000
+    ORG $C00000
     JMP >startmain
     ENDS
         

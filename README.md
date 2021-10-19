@@ -33,11 +33,11 @@ to make use of the full address range with flat regions for both RAM, IO and ROM
 | from   | to     | type 
 | ------ | ------ | -----------------
 | 000000 | 07FFFF | RAM
-| 7F0000 | 7F0000 | IO port
-| 800000 | 87EFFF | User flash
+| 400000 | 400000 | IO port
+| C00000 | C7EFFF | User flash
 | FFF000 | FFFFFF | Boot loader flash
 
-All other ranges of the 16MB space are mirrors of some of the specified ranges here, but should not 
+Many other ranges of the 16MB space are mirrors of some of the specified ranges here, but should not 
 be used in order to allow future extensions.
 
 ## Compiling for the platform
@@ -93,8 +93,8 @@ interface board with support for these signals.
 | INPUT  6     | CTS   | RTS     |
 
 If your USB-to-UART interface does only have a CTS input, but no RTS output, this can also be made to work.
-Just pull the CTS input of the OS816 permanently to GND and disable flow control in the direction from the OS816 
-to your computer, assuming that your computer is fast enough so it can always process any incomming data.
+Just pull the CTS input of the OS816 permanently to GND to disable flow control in the direction from the OS816 
+to your computer, assuming that your computer is fast enough so it can always process all incomming data.
 
 ## Contact
 

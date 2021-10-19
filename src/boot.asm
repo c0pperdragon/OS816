@@ -52,7 +52,7 @@ BOOT SECTION        ; needs to be located at $FFF000
     SEP #$20 
     LONGA OFF
     LDA #$FF
-    STA >$7F0000
+    STA >$400000
     STA >outportshadow
     REP #$20 
     LONGA ON
@@ -83,13 +83,13 @@ BOOT SECTION        ; needs to be located at $FFF000
 skipstartupdelay
 
     ; when there is no user program at all directly go to monitor
-    LDA >$800000
+    LDA >$C00000
     CMP #$FFFF
     BEQ startmonitor
     ; check incomming CTS signal to detect if there is a communication partner
     ; present to receive start message and to maybe trigger boot monitor
     SEP #$20 
-    LDA >$7F0000
+    LDA >$400000
     REP #$20    
     AND #$0040
     BNE startuserprogram
@@ -106,15 +106,15 @@ skipstartupdelay
 startmonitor
     JSL >~~monitor
     ; when there is a user program available then, fire it up
-    LDA >$800000
+    LDA >$C00000
     CMP #$FFFF
     BEQ startmonitor
 startuserprogram
-    JSL >$800000
+    JSL >$C00000
     BRA ~~softreset
 
 startupmessage
-    DB "OS816 1.1 - press any key to enter monitor."
+    DB "OS816 1.2 - press any key to enter monitor."
     DB 10,0
     
     
@@ -181,7 +181,7 @@ done                ; SUM = 2+2+2 + (2+3)*1998 - 1 + 2 + 3 = 10000
     SEP #$20 
     longa off
     ; make IO address available via DBR
-    LDA #$7F 
+    LDA #$40
     PHA
     PLB      
     ; must wait until the receiver is ready to accept new data (incomming CTS must be low)
@@ -243,7 +243,7 @@ waitforready
     STA >numbuffered 
     STA >numconsumed 
     ; prepare accessing the io addresses
-    LDA #$7F
+    LDA #$40
     PHA
     PLB
     ; notify the sender that we are ready to accept data
@@ -516,7 +516,7 @@ digits:
     SEP #$20
     LONGA OFF
     LDA 4,s
-    STA >$7F0000
+    STA >$400000
     ORA #$03   ; serial expects both its output bits to be high here 
     STA >outportshadow
     REP #$20
@@ -532,7 +532,7 @@ digits:
 ~~portin
     SEP #$20
     LONGA OFF
-    LDA >$7F0000
+    LDA >$400000
     REP #$20
     LONGA ON
     AND #$00FF
@@ -575,10 +575,11 @@ transferaccesscode
     ; check if outside bounds
     LDX #0
     LDA <57    
-    BPL skipcopyloop    ; destination start is < 800000
+    CMP #$C000
+    BCC skipcopyloop    ; destination start is < C00000
     LDA <41
-    CMP #$87F0      
-    BPL skipcopyloop    ; destination end is >= 87F000   
+    CMP #$C7F0
+    BPL skipcopyloop    ; destination end is >= C7F000   
     ; init counters
     LDX #0
     LDY <64
@@ -636,11 +637,11 @@ skipcopyloop
 ; Invocation by far subroutine call
 writebytetoflash
     LONGA OFF
-    STA >$805555             ; 4
+    STA >$C05555             ; 4
     LDA #$55                 ; 2
-    STA >$802AAA             ; 4
+    STA >$C02AAA             ; 4
     LDA #$A0                 ; 2
-    STA >$805555             ; 4
+    STA >$C05555             ; 4
     TXA                      ; 1
     STA [<56],Y              ; 2
 waitflashstable
@@ -680,9 +681,10 @@ transfererasecode
     STA <56
     ; check if sector may be erased
     LDA <57
-    BPL aftererase  ; address was < 800000
-    CMP #$87F0      
-    BPL aftererase  ; address was >= 87F000    
+    CMP #$C000
+    BCC aftererase  ; address was < C00000
+    CMP #$C7F0      
+    BPL aftererase  ; address was >= C7F000    
     ; test if sector actually needs erasing
     LDA #$FFFF
     LDY #4096-2
@@ -722,15 +724,15 @@ aftererase
 ; Invocation by far subroutine call
 erasesector
     LONGA OFF
-    STA >$805555             ; 4
+    STA >$C05555             ; 4
     LDA #$55                 ; 2
-    STA >$802AAA             ; 4
+    STA >$C02AAA             ; 4
     LDA #$80                 ; 2
-    STA >$805555             ; 4
+    STA >$C05555             ; 4
     LDA #$AA                 ; 2
-    STA >$805555             ; 4
+    STA >$C05555             ; 4
     LDA #$55                 ; 2
-    STA >$802AAA             ; 4
+    STA >$C02AAA             ; 4
     LDA #$30                 ; 2
     STA [<56]                ; 2
 waiterasestable
@@ -761,9 +763,9 @@ executefromstackframe
 
 ; -------------------- MEMORY CONFIGURATION QUERY ----------------------------
 ; User modifyable flash range (everything except boot loader) 
-; extends from $800000 to $87F000 (508KB)
+; extends from $C00000 to $C7F000 (508KB)
 ~~topaddress_flash
-    LDX #$0087
+    LDX #$00C7
     LDA #$F000
     RTL
 ; RAM range is 512KB starting from 0
