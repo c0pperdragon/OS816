@@ -6,7 +6,7 @@
 | Western Design Center | W65C816S             | U1          |     1 | Processor                    | DIP-40     |
 | Alliance Memory       | AS6C4008-55PCN       | U2          |     1 | Static RAM 512K              | DIP-32     |
 | Microchip Technology  | SST39SF040-70-4C-PHE | U3          |     1 | NOR Flash 512K               | DIP-32     |
-| Texas Instruments     | 74AHC573             | U4          |     1 | Octal Transparent Latch      | DIP-20     |
+| Texas Instruments     | 74AC573/74AHC573     | U4          |     1 | Octal Transparent Latch      | DIP-20     |
 | various               | 74HC04               | U5          |     1 | Hex Inverter                 | DIP-14     |
 | various               | 74HC138              | U6          |     1 | 3-to-8 Decoder               | DIP-16     |
 | various               | 74HC574              | U7          |     1 | Flip-Flop                    | DIP-20     |
