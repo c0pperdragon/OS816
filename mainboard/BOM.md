@@ -1,4 +1,4 @@
-# OS816 Bill of Materials
+# OS816 Rev.3 - Bill of Materials
 
 
 | Manufacturer          | Manufacturer Number  | Designator  |  Qty  |  Description                 | Case       |  
