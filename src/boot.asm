@@ -114,8 +114,8 @@ startuserprogram
     BRA ~~softreset
 
 startupmessage
-    DB "OS816 1.2 - press any key to enter monitor."
-    DB 10,0
+    DB "OS816 1.3 - press any key to enter monitor."
+    DB 13,10,0
     
     
 ; ----------------- Tuned delay loop ----------------------

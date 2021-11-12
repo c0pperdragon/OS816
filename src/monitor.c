@@ -21,7 +21,7 @@ void receiveline(char* buffer, int buffersize)
         }
         else if (c=='\n' || c=='\r')
         {            
-            if (buffer[0]!=':') { send('\n'); }            
+            if (buffer[0]!=':') { sendstr("\r\n"); }            
             return; 
         }
         else if (c=='\b' && len>0)
@@ -101,7 +101,7 @@ void printdump(unsigned long address)
         if (c>=32 && c<127) { send(c); }
         else { send('.'); }
     }
-    send('\n');
+    sendstr("\r\n");
 }
 
 
@@ -117,16 +117,16 @@ void processline(char* line, unsigned int* hexoffset)
     {              // HELP 
         sendstr
         ("\
-Monitor commands. All numbers are HEX\n\
-H                  Help (this message)\n\
-M <addr> [bytes]   Memory dump\n\
-[W] <addr> <data>  Write to memory\n\
-R <addr>           Run program\n\
-C                  Clear RAM bank 0\n\
-E <sectoraddress>  Erase 4K flash sector\n\
-!                  Erase all user flash\n\
-:<intelhex>        Reprogram flash\n\
-X                  Exit monitor\n"
+Monitor commands. All numbers are HEX\r\n\
+H                  Help (this message)\r\n\
+M <addr> [bytes]   Memory dump\r\n\
+[W] <addr> <data>  Write to memory\r\n\
+R <addr>           Run program\r\n\
+C                  Clear RAM bank 0\r\n\
+E <sectoraddress>  Erase 4K flash sector\r\n\
+!                  Erase all user flash\r\n\
+:<intelhex>        Reprogram flash\r\n\
+X                  Exit monitor\r\n"
         );
     }
     else if (cmd=='M') 
@@ -195,7 +195,7 @@ X                  Exit monitor\n"
         skipoverspace(line, &cursor);
         address = parsenumber(line, &cursor, 6) & 0xFFFFF000;
         if (address<0xC00000 || address>=0xC7F000) {
-            sendstr("OUT OF RANGE\n");
+            sendstr("OUT OF RANGE\r\n");
             return;
         }
         eraseflash((void*)address);
@@ -215,7 +215,7 @@ X                  Exit monitor\n"
         numbytes = (unsigned int) parsenumber(line, &cursor, 2);
         if (numbytes>100) 
         {
-            sendstr("\nTOO LONG\n");
+            sendstr("\r\nTOO LONG\r\n");
             return;
         }
         checksum += numbytes;
@@ -232,7 +232,7 @@ X                  Exit monitor\n"
         }
         if ((checksum & 0xFF)!=0) 
         {
-            sendstr("\nCHECKSUM\n");
+            sendstr("\r\nCHECKSUM\r\n");
             return;
         }
         if (cmd==0) 
@@ -244,17 +244,17 @@ X                  Exit monitor\n"
             target += target;
             target = 0xC00000 + target + address;
             if (target<0xC00000 || target+numbytes>0xC7F000) {
-                sendstr("\nOUT OF RANGE\n");
+                sendstr("\r\nOUT OF RANGE\r\n");
                 return;
             }
             if (writeflash((char*)target, buffer, numbytes)!=numbytes)
             {
-                sendstr("\nVERIFY ERROR\n");
+                sendstr("\r\nVERIFY ERROR\r\n");
             }
         }
         else if (cmd==1)           
         {       // end of HEX file
-            sendstr("\nEND\n");
+            sendstr("\r\nEND\r\n");
         }
         else if (cmd==2 && numbytes==2) 
         {    // set the offset
@@ -262,12 +262,12 @@ X                  Exit monitor\n"
         }
         else 
         {
-            sendstr("\nUNSUPPORTED HEX COMMAND\n");
+            sendstr("\r\nUNSUPPORTED HEX COMMAND\r\n");
         }
     }
     else 
     {
-        sendstr("UNKNOWN COMMAND\n");
+        sendstr("UNKNOWN COMMAND\r\n");
     }
 }
 
@@ -276,7 +276,7 @@ void monitor(void)
     char line[200];
     unsigned int hexoffset = 0;
     
-    sendstr("OS816 boot monitor 1.1 - type H for help.\n");
+    sendstr("OS816 boot monitor - type H for help.\r\n");
     for (;;)
     {
         receiveline(line,200);

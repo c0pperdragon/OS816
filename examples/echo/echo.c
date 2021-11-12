@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-    sendstr("Remote echo demo, try to type keys...\n");
+    sendstr("Remote echo demo, try to type keys...\r\n");
     for (;;)
     {
         int b;

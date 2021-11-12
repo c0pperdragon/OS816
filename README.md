@@ -1,20 +1,20 @@
 # OS816
 
 A small single board computer using the 65C816 processor running at 10MHz, together with 512KB of RAM, 
-512KB of Flash and a simple but effective I/O circuitry.
+512KB of flash and a simple but effective I/O circuitry.
 
-I made a small boot loader program for this hardware sitting in the top 4KB of Flash to upload further
+I made a small boot loader program for this hardware sitting in the top 4KB of flash to upload further
 code via a serial connection to avoid the need of swapping the Flash IC in and out of the board all the time.
 
 User programs can be developed with the WDC compiler tool chain that provides an assembler as well as 
 a C compiler confirming to the C89/90 standard (a.k.a ANSI C). 
 I had to fix some bugs and add implementations for stdin/stdout over serial and file access
 to utilize the unoccupied area of the Flash memory. By now it is complete enough to run the "frotz" 
-interactive fiction interpreter.
+interactive fiction interpreter to play some of the old text adventure classics.
 
-![alt text](doc/breadboard.jpg "Reference setup on breadboard")
+![alt text](doc/rev3board.jpg "Revision 3")
 
-## 65C816 reference setup
+## Minimum 65C816 setup
 
 This processor is a tricky beast to use in a circuit as it has some unusual quirks that need consideration,
 especially when you want to use more than 64KB of address space.
@@ -26,7 +26,7 @@ placed in bank 0.
 
 Points 1 and 2 are just solved with some extra logic on the board. Point 3 is solved by using the emulation bit
 to force the top 8 address lines to $FF during startup time. Once the program is running it switches to native mode
-to make use of the full address range with flat regions for both RAM, IO and ROM.
+to make use of the full address range with flat regions for both RAM, IO and flash.
 
 ## Memory map
 
@@ -42,13 +42,13 @@ be used in order to allow future extensions.
 
 ## Compiling for the platform
 
-The WDC compiler tools (running on Windows only) are used that include a C compiler, so it is easy to
-get things done without directly touching the 65C816 machine code. The OS816 libraries are designed
+The free WDC compiler tools (running on Windows only) are used that include a C compiler, so it is easy to
+get most things done without directly touching the 65C816 machine code. The OS816 libraries are designed
 for the "large" memory model to evenly access static and dynamic data without bothering
 about banks, direct page and all the other intricate details of this specific CPU.
 Low level access to the hardware (essentially to the IO port, but also the flash programming functions) 
-is provided by libraries that are directly written in machine code for best performance and because sometimes it would not be 
-possible otherwise.
+is provided by libraries that are directly written in machine code for best performance and because sometimes
+it would not be possible otherwise.
 
 The necessary compiler and linker can be found at the Western Design Center's
 [download page](https://www.westerndesigncenter.com/wdc/tools.php).
@@ -68,7 +68,7 @@ price.
 ## Uploading 
 
 Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
-written to the Flash using the resident boot loader program. When starting up the machine with a serial terminal attached,
+written to flash using the resident boot loader program. When starting up the machine with a serial terminal attached,
 the boot loader enters a command line interface. Here memory locations can be inspected or modified and also the content
 of the flash can be reprogrammed. After completely erasing the user flash area with the "!" command, you can conveniently 
 dump a whole intel hex file into the terminal whose lines will be treated as individual programming commands.
@@ -78,7 +78,7 @@ time to enter the command line interface by pressing a key. Otherwise it will fi
 
 ## Serial interface
 
-With its simple IO hardware, the CPU is in charge of all signal handling. With a 10MHz clock and handcrafted machine code
+With its simple IO hardware, the CPU is in charge of all signal handling. With a 10MHz clock and hand-crafted machine code
 it was possible to implement a reliable serial communication that can run at 115.2kHz (1 start bit, 1 stop bit, no parity). 
 But as the CPU can not do any communication when being busy with other things it is necessary that the 
 communication partner must only send data when the CPU is prepared to receive it. A straight forward solution 
@@ -96,10 +96,18 @@ If your USB-to-UART interface does only have a CTS input, but no RTS output, thi
 Just pull the CTS input of the OS816 permanently to GND to disable flow control in the direction from the OS816 
 to your computer, assuming that your computer is fast enough so it can always process all incomming data.
 
+## Overclocking
+
+I have chosen this moderately fast 10MHz as the clock speed to always stay safely inside all the timing constraints 
+and to make cycle-counting as simple as possible. But I was also able to run the board at 16MHz without problems.
+If you want to try this, you need to swap out the crystal and set the serial communication speed in your
+terminal program accordingly.
+
 ## Contact
 
-For questions regarding purchases of either a pre-programmed Flash IC or a whole kit
-for self-assembly, please contact me directly at:  reinhard.grafl (at) aon.at
+For questions regarding purchases of either a pre-programmed flash IC or a whole kit
+for self-assembly (using through-hole parts exclusively),
+please contact me directly at:  reinhard.grafl (at) aon.at
 
 For other questions that may also be of interest for other users, 
 please create an [issue ticket](https://github.com/c0pperdragon/OS816/issues).  

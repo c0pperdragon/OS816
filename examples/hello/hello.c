@@ -7,7 +7,7 @@ int main(int argc, char** argv)
     int i;
     for (i=0; i<5; i++)
     {
-        sendstr("Mist!\n"); 
+        sendstr("Mist!\r\n"); 
         sleep(1000);
     }
     return 0;

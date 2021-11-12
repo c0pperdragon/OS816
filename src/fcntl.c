@@ -96,7 +96,9 @@ size_t write(int fd, void * buffer, size_t len)
         size_t i = 0;
         for (i=0; i<len; i++)
         {
-            send ( ((unsigned char *)buffer) [i] );
+            unsigned char b = ((unsigned char *)buffer) [i];
+            if (b=='\n') { send('\r'); }
+            send (b);
         }
         return len;        
     }
