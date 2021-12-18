@@ -931,18 +931,6 @@ Text Notes 3250 850  0    79   ~ 0
 LATCH
 Wire Wire Line
 	4000 3100 4000 3250
-Text Label 3700 3250 1    50   ~ 0
-D4
-Text Label 3800 3250 1    50   ~ 0
-D5
-Wire Wire Line
-	3700 3250 3700 3100
-Wire Wire Line
-	3800 3100 3800 3250
-Text Label 3600 3250 1    50   ~ 0
-D3
-Wire Wire Line
-	3600 3250 3600 3100
 Text Label 3700 1800 3    50   ~ 0
 A20
 Text Label 3600 1800 3    50   ~ 0
@@ -1843,4 +1831,29 @@ Wire Wire Line
 	8100 1150 8100 1100
 Wire Wire Line
 	8100 1100 8150 1100
+$Comp
+L power:GND #PWR?
+U 1 1 6179F0DC
+P 3600 3200
+F 0 "#PWR?" H 3600 2950 50  0001 C CNN
+F 1 "GND" H 3605 3027 50  0000 C CNN
+F 2 "" H 3600 3200 50  0001 C CNN
+F 3 "" H 3600 3200 50  0001 C CNN
+	1    3600 3200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3600 3200 3600 3150
+Wire Wire Line
+	3600 3150 3700 3150
+Wire Wire Line
+	3700 3150 3700 3100
+Wire Wire Line
+	3700 3150 3800 3150
+Wire Wire Line
+	3800 3150 3800 3100
+Connection ~ 3700 3150
+Wire Wire Line
+	3600 3150 3600 3100
+Connection ~ 3600 3150
 $EndSCHEMATC
