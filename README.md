@@ -65,6 +65,9 @@ and also the 'boot.hex' file which needs to be written to the flash IC.
 To avoid buying this not completely cheap programmer I could provide you with a pre-flashed IC for a reasonable
 price. 
 
+With the kit I sell at [tindie](https://www.tindie.com/products/c0pperdragon/os816-single-board-computer-kit/),
+the flash IC comes already pre-programmed.
+
 ## Uploading 
 
 Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
