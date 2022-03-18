@@ -7,7 +7,7 @@ encoding utf-8
 Sheet 1 1
 Title "OS816 computer"
 Date ""
-Rev "3"
+Rev "4"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1761,8 +1761,6 @@ Wire Wire Line
 	6000 2100 6000 1650
 Wire Wire Line
 	6100 2100 6100 1650
-NoConn ~ 5800 2100
-NoConn ~ 5900 2100
 Connection ~ 900  1650
 $Comp
 L 74xx:74HC04 U5
@@ -1831,29 +1829,26 @@ Wire Wire Line
 	8100 1150 8100 1100
 Wire Wire Line
 	8100 1100 8150 1100
-$Comp
-L power:GND #PWR?
-U 1 1 6179F0DC
-P 3600 3200
-F 0 "#PWR?" H 3600 2950 50  0001 C CNN
-F 1 "GND" H 3605 3027 50  0000 C CNN
-F 2 "" H 3600 3200 50  0001 C CNN
-F 3 "" H 3600 3200 50  0001 C CNN
-	1    3600 3200
-	1    0    0    -1  
-$EndComp
+Text Label 3600 3250 1    50   ~ 0
+D3
+Text Label 3700 3250 1    50   ~ 0
+D4
+Text Label 3800 3250 1    50   ~ 0
+D5
 Wire Wire Line
-	3600 3200 3600 3150
+	3600 3100 3600 3250
 Wire Wire Line
-	3600 3150 3700 3150
+	3700 3100 3700 3250
 Wire Wire Line
-	3700 3150 3700 3100
+	3800 3100 3800 3250
+Text Label 5900 1650 3    50   ~ 0
+AUXRD#
+Text Label 5800 1650 3    50   ~ 0
+AUXWR#
 Wire Wire Line
-	3700 3150 3800 3150
+	5800 1550 5800 2100
 Wire Wire Line
-	3800 3150 3800 3100
-Connection ~ 3700 3150
-Wire Wire Line
-	3600 3150 3600 3100
-Connection ~ 3600 3150
+	5900 1550 5900 2100
+NoConn ~ 5800 1550
+NoConn ~ 5900 1550
 $EndSCHEMATC
