@@ -126,7 +126,7 @@ startuserprogram
     BRL ~~softreset
 
 startupmessage
-    DB "OS816 1.3 - press any key to enter monitor."
+    DB "OS816 1.4 - press any key to enter monitor."
     DB 13,10,0
     
     
