@@ -9,11 +9,12 @@
     
     
 ; --------------------- RAM layout ---------------------------- 
-stacktop            set $00FEFF   ; right below the 256 bytes for serial handling
-buffereddata        set $00FF00   ; 253 bytes
-numbuffered         set $00FFFD   ; 8 bit
-numconsumed         set $00FFFE   ; 8 bit
-outportshadow       set $00FFFF   ; 8 bit 
+stacktop            set $00FEFF   ; right below the reserved 256 bytes
+buffereddata        set $00FF00   ; 252 bytes
+numbuffered         set $00FFFC   ; 8 bit
+numconsumed         set $00FFFD   ; 8 bit
+outportshadow       set $00FFFE   ; 8 bit
+detectedrambanks    set $00FFFF   ; 8 bit
 
 ; The timeouts for waiting for incomming data after asserting RTS and then also after
 ; de-asserting the line again. 
@@ -48,9 +49,20 @@ BOOT SECTION        ; needs to be located at $FFF000
     ; clear all other status flags as well
     REP #$FF   
    
-    ; set the output port to a defined state
     SEP #$20 
     LONGA OFF
+    ; detect number of RAM banks
+    LDA #64        ; possibly 4MB
+    STA >$3FFFFF
+    LDA #32        ; possibly 2MB
+    STA >$1FFFFF
+    LDA #16        ; possibly 1MB
+    STA >$0FFFFF
+    LDA #8         ; possibly 512KB
+    STA >$07FFFF   
+    LDA >$3FFFFF   ; read out result of detection
+    STA >detectedrambanks
+    ; set the output port to a defined state
     LDA #$FF
     STA >$400000
     STA >outportshadow
@@ -64,13 +76,13 @@ BOOT SECTION        ; needs to be located at $FFF000
     LDA #0
     TCD
 
-    ; clear initial serial communication buffer
+    ; clear initial serial communication buffer and variables 
     ; and also init data bank register on the way
     LDA #0
     STA >buffereddata
     LDX #buffereddata
     LDY #buffereddata+1
-    LDA #253
+    LDA #252
     MVN #^buffereddata,#^buffereddata ;clear-copy bytes
     
     ; for genuine 65c816 add a small delay to stay clear of 
@@ -111,7 +123,7 @@ startmonitor
     BEQ startmonitor
 startuserprogram
     JSL >$C00000
-    BRA ~~softreset
+    BRL ~~softreset
 
 startupmessage
     DB "OS816 1.3 - press any key to enter monitor."
@@ -378,7 +390,7 @@ startreceivebyte
     PLA
     ; store the data if there is space left
     LDA >numbuffered
-    CMP #253
+    CMP #252
     BEQ receiveandstoredone
     TAX
     INC 
@@ -768,9 +780,11 @@ executefromstackframe
     LDX #$00C7
     LDA #$F000
     RTL
-; RAM range is 512KB starting from 0
+; RAM range size depends on detected number or RAM banks
 ~~topaddress_ram
-    LDX #$0008
+    LDA >detectedrambanks
+    AND #$00FF
+    TAX
     LDA #$0000
     RTL
 

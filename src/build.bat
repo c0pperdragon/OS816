@@ -4,7 +4,7 @@ del ..\bin\*.hex
 
 WDC816AS boot.asm
 WDC816CC -ML -MV -MU -MK -MT -SO0S -WL -WP monitor.c
-WDCLN -HIE -ABOOT=FFF000,7F000 -CFFF400,7F400 -ARESET=FFFFF0,7FFF0 boot.obj monitor.obj -O ..\bin\boot.hex
+WDCLN -HIE -ABOOT=FFF000,7F000 -CFFF420,7F420 -ARESET=FFFFF0,7FFF0 boot.obj monitor.obj -O ..\bin\boot.hex
 
 WDC816AS os816.asm -O..\bin\os816.obj
 
