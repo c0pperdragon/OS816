@@ -7,7 +7,7 @@ encoding utf-8
 Sheet 1 1
 Title "OS816 computer"
 Date ""
-Rev "3"
+Rev "4"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1851,4 +1851,27 @@ Wire Wire Line
 	5900 1550 5900 2100
 NoConn ~ 5800 1550
 NoConn ~ 5900 1550
+$Comp
+L Connector_Generic:Conn_01x03 JADR1
+U 1 1 626FCA06
+P 5850 5350
+F 0 "JADR1" H 5930 5392 50  0000 L CNN
+F 1 "Conn_01x03" H 5600 5100 50  0000 L CNN
+F 2 "" H 5850 5350 50  0001 C CNN
+F 3 "~" H 5850 5350 50  0001 C CNN
+	1    5850 5350
+	1    0    0    -1  
+$EndComp
+Text Label 5450 5250 0    50   ~ 0
+A19
+Text Label 5450 5350 0    50   ~ 0
+A20
+Text Label 5450 5450 0    50   ~ 0
+A21
+Wire Wire Line
+	5450 5250 5650 5250
+Wire Wire Line
+	5450 5350 5650 5350
+Wire Wire Line
+	5450 5450 5650 5450
 $EndSCHEMATC
