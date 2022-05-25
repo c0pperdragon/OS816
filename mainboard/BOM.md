@@ -1,8 +1,9 @@
-# OS816 Rev.3 - Bill of Materials
+# OS816 Rev.4 - Bill of Materials
 
 All parts go to the top side of the PCB, which is were the part designators are printed on.
 The bottom side of the PCB just shows where the various architectural components (CPU, RAM, etc.)
 are placed.
+Connector JADR1 is inteded for possible extension and not populated.
 
 | Manufacturer Number  | Designator  |  Qty  |  Description                 | Case       | Assembly notes                            |
 | -------------------- | ----------- |------ | ---------------------------- | ---------- | ----------------------------------------- |
