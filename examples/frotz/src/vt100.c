@@ -78,7 +78,7 @@ void os_display_char(zchar c)
 { 
     switch (c)
     {
-    	case ZC_RETURN:
+        case ZC_RETURN:
             putchar ('\n');
             break;
         case ZC_GAP: 
@@ -101,7 +101,6 @@ void os_set_text_style(int s)
     int on = s & ~currentstyle;
     int off = currentstyle & ~s;
     currentstyle = s;
-    //printf ("<%d>",s);
     
     if (on & REVERSE_STYLE)
     {
@@ -115,13 +114,11 @@ void os_set_text_style(int s)
 
 void os_set_cursor(int row, int column) 
 { 
-//    printf("<%d,%d>", row, column);
     printf("\033[%d;%dH", row, column);
 }
 
 void os_scroll_area(int row, int column, int height, int width, int upwards) 
 {
-//   printf("[%d,%d,%d,%d,%d]", a,b,c,d,e);
     if (row==2 && column==1 && height==24 && width==80)
     {
         int i;
@@ -141,8 +138,8 @@ void os_display_string(const zchar *s)
         {
             if (s[i+1]!=0) { i++; };
         }    
-    	else if (c == ZC_NEW_STYLE)
-    	{
+        else if (c == ZC_NEW_STYLE)
+        {
             if (s[i+1]!=0) 
             {
                 os_set_text_style(s[i+1]);
@@ -185,12 +182,12 @@ void os_fatal(const char *format, ...)
 
 int os_font_data(int font, int *height, int *width)
 {
-	if (font == TEXT_FONT) {
-		*height = 1;
-		*width = 1;
-		return 1;
-	}
-	return 0;
+    if (font == TEXT_FONT) {
+        *height = 1;
+        *width = 1;
+        return 1;
+    }
+    return 0;
 }
 
 char *os_read_file_name (const char *default_name, int filetype)
@@ -240,7 +237,7 @@ void os_process_arguments(int argc, char *argv[])
     }
     else
     {
-        printf("Which story do you want to load? ");
+        printf("Which story do you want to load (zork1, zork2, zork3)? ");
         read_line_with_echo(buffer,100,0);
         putchar('\n');
         // if file does not exist try to guess an extension
@@ -281,8 +278,8 @@ int os_string_width(const zchar *s)
     zchar c;
     for(i=0; (c=s[i])!=0; i++) 
     { 
-    	if (c == ZC_NEW_FONT || c == ZC_NEW_STYLE)
-    	{
+        if (c == ZC_NEW_FONT || c == ZC_NEW_STYLE)
+        {
             if (s[i+1]!=0) { i++; };
         }
         else if (c>=32)
