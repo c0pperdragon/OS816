@@ -68,17 +68,6 @@ price.
 With the kit I sell at [tindie](https://www.tindie.com/products/c0pperdragon/os816-single-board-computer-kit/),
 the flash IC comes already pre-programmed.
 
-## Uploading 
-
-Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
-written to flash using the resident boot loader program. When starting up the machine with a serial terminal attached,
-the boot loader enters a command line interface. Here memory locations can be inspected or modified and also the content
-of the flash can be reprogrammed. After completely erasing the user flash area with the "!" command, you can conveniently 
-dump a whole intel hex file into the terminal whose lines will be treated as individual programming commands.
-Once the user program is in the flash, the command "x" will start up this program. 
-When the machine starts up with a user program already installed, the boot loader will give you 1 second 
-time to enter the command line interface by pressing a key. Otherwise it will fire up the user program directly.
-
 ## Serial interface
 
 With its simple IO hardware, the CPU is in charge of all signal handling. With a 10MHz clock and hand-crafted machine code
@@ -98,6 +87,17 @@ interface board with support for these signals.
 If your USB-to-UART interface does only have a CTS input, but no RTS output, this can also be made to work.
 Just pull the CTS input of the OS816 permanently to GND to disable flow control in the direction from the OS816 
 to your computer, assuming that your computer is fast enough so it can always process all incomming data.
+
+## Uploading 
+
+Compiling with the recommended tools will create a file in Intel HEX format. This file contains the "user code" which can be 
+written to flash using the resident boot loader program. When starting up the machine with a serial terminal attached,
+the boot loader enters a command line interface. Here memory locations can be inspected or modified and also the content
+of the flash can be reprogrammed. After completely erasing the user flash area with the "!" command, you can conveniently 
+dump a whole intel hex file into the terminal whose lines will be treated as individual programming commands.
+Once the user program is in the flash, the command "x" will start up this program. 
+When the machine starts up with a user program already installed, the boot loader will give you 1 second 
+time to enter the command line interface by pressing a key. Otherwise it will fire up the user program directly.
 
 ## Overclocking
 
