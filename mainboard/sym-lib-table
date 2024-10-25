@@ -1,3 +1,5 @@
 (sym_lib_table
-  (lib (name parts)(type Legacy)(uri C:/Users/Reinhard/Documents/GitHub/ByteMachine/mainboard/parts.lib)(options "")(descr ""))
+  (version 7)
+  (lib (name "parts")(type "Legacy")(uri "C:/Users/Reinhard/Documents/GitHub/ByteMachine/mainboard/parts.lib")(options "")(descr ""))
+  (lib (name "mainboard-rescue")(type "KiCad")(uri "${KIPRJMOD}/mainboard-rescue.kicad_sym")(options "")(descr ""))
 )

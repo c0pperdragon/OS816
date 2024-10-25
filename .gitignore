@@ -3,3 +3,4 @@
 *.bin
 *.TMP
 bin/
+*backup*
