@@ -713,7 +713,7 @@
 		(descr "9-pin Resistor SIP pack")
 		(tags "R")
 		(property "Reference" "RN1"
-			(at 23.368 0 -90)
+			(at -2.92 0.02 -90)
 			(layer "F.SilkS")
 			(uuid "381b70d8-7f90-4732-b173-3493cdd52409")
 			(effects
