@@ -11,7 +11,6 @@ typedef struct FreeBlock {
 
 #define MINBLOCKSIZE (sizeof(FreeBlock))
 
-char isheapinitialized = 0;
 FreeBlock *firstfree = 0;
 
 
@@ -36,12 +35,11 @@ char *heapStart(void)
     return (char*) top1;
 }
 
-void initheap(void)
+void initheap(void* heaptop)
 {
     firstfree = (FreeBlock*) heapStart();
-    firstfree->length = ((unsigned long)topaddress_ram())-((unsigned long) firstfree);
+    firstfree->length = ((unsigned long)heaptop)-((unsigned long) firstfree);
     firstfree->next = 0;
-    isheapinitialized = 1;    
 }    
 
 void *longalloc(unsigned long payloadsize)
@@ -49,8 +47,6 @@ void *longalloc(unsigned long payloadsize)
     unsigned long length = payloadsize<MINBLOCKSIZE-4 ? MINBLOCKSIZE : payloadsize+4; 
     FreeBlock** fowner;
     FreeBlock* f;
-
-    if (!isheapinitialized) { initheap(); }
 
     // keep track who is referencing the current block
     // search for first free block that is large enough

@@ -27,3 +27,6 @@ void eraseflash(char* sectoraddress);
 // Memory configuration queries
 void* topaddress_flash(void);
 void* topaddress_ram(void);
+
+// Manual heap initialization (normally done by startup code)
+void initheap(void* heaptop);

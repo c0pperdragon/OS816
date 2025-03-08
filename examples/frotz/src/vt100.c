@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <devices.h>
 #include "frotz.h"
 
 char* storyfilename = "";
@@ -230,7 +231,7 @@ void os_restart_game(int code)
 
 void os_process_arguments(int argc, char *argv[]) 
 {
-    char buffer[110];
+    char buffer[112];
     if (argc>1) 
     {
         storyfilename=argv[1]; 
@@ -238,9 +239,11 @@ void os_process_arguments(int argc, char *argv[])
     else
     {
         printf("Which story do you want to load (zork1, zork2, zork3)? ");
-        read_line_with_echo(buffer,100,0);
+		strcpy(buffer,"romfile:");
+        read_line_with_echo(buffer+strlen(buffer),100,0);
         putchar('\n');
         // if file does not exist try to guess an extension
+		attachdevice_romfile();
         if (!fileexists(buffer))
         {
             int l = strlen(buffer);
