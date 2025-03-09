@@ -32,6 +32,7 @@ unsigned int romfile_write(IODescriptor* descriptor, void * buffer, unsigned int
 long romfile_lseekwrite(IODescriptor* descriptor, long offset, int whence);
 
 void romfile_compact(void);
+int haveActiveRomReadFile(const char* name);
 
 
 //----- device descriptors (for reading and writing)-----
@@ -152,6 +153,9 @@ int romfile_delete(const char* name)
 {
     char* img = romFileStart();   
     char terminator = '\0';
+	
+	// may not delete file if currently open for reading
+    if (haveActiveRomReadFile(name)) { return -1; }
     
     for (;;)
     {
@@ -179,43 +183,40 @@ size_t romfile_forbidden(IODescriptor* descriptor, void * buffer, size_t len)
 
 // ----------------- facility to read ROM files ----------------------------
 
-typedef struct 
+typedef struct RomReadFile 
 {
 	IODescriptor descriptor;
     unsigned char* img;
     unsigned char* data;
     unsigned long size;
     unsigned long cursor;
+	struct RomReadFile *next;
 } 
 RomReadFile;
 
-/*
-#define CONCURRENTREADFILES 4
-RomReadFile romreadfiles[CONCURRENTREADFILES];
+RomReadFile* romreadfiles = NULL;
 
-RomReadFile *getOpenRomReadFile(int readfd)
-{
-    RomReadFile* f;
-    if (readfd<0 || readfd>=CONCURRENTREADFILES) { return 0; }
-    f = romreadfiles+readfd;
-    if (!f->isopen) { return 0l; }
-    return f;
-}
-*/
 void relocateRomReadFile(char* imgbefore, char* imgafter)
 {
-	/*
-    int i;
     RomReadFile *rf;
-    for (i=0, rf=romreadfiles; i<CONCURRENTREADFILES; i++, rf++) 
+    for (rf=romreadfiles; rf!=NULL; rf=rf->next) 
     {
-        if (rf->isopen && rf->img == imgbefore)
+        if (rf->img == imgbefore)
         {
             rf->img = imgafter;
             rf->data = imgafter + 8 + strcmplen(imgafter+8, imgafter+8) + 1;
         }
     }
-	*/
+}
+
+int haveActiveRomReadFile(const char* name)
+{
+    RomReadFile *rf;
+    for (rf=romreadfiles; rf!=NULL; rf=rf->next) 
+    {
+        if (strcmplen(name,rf->img+8)) { return 1; }
+    }
+    return 0;
 }
 
 IODescriptor* romfile_openread(const char * name)
@@ -246,13 +247,31 @@ IODescriptor* romfile_openread(const char * name)
         f->data = img + 9 + namelength;
         f->size = imagelength - namelength - 9;
         f->cursor = 0; 
+		f->next = romreadfiles;
+		romreadfiles = f;
         return &(f->descriptor);
     }
 }
 
 int romfile_closeread(IODescriptor* descriptor) 
 {
-	free(descriptor);
+    RomReadFile* f = (RomReadFile*) descriptor;
+	if (romreadfiles == f) 
+	{
+		romreadfiles = f->next;
+	}
+	else
+	{
+		RomReadFile* n;
+		for (n=romreadfiles; n!=NULL; n=n->next)
+		{
+			if (n->next == f) {
+				n->next = f->next;
+				break;
+			}
+		}
+	}
+	free(f);
     return 0;
 }
 
@@ -297,7 +316,7 @@ long romfile_lseekread(IODescriptor* descriptor, long offset, int whence)
 
 // ------------- facility to write ROM fies --------------------------
 
-typedef struct 
+typedef struct RomWriteFile
 {
 	IODescriptor descriptor;
     unsigned char* filename;
@@ -310,48 +329,12 @@ RomWriteFile;
 
 #define MAXCHUNKS 256
 #define CHUNKSIZE 1024
-/*
-#define CONCURRENTWRITEFILES 4
-RomWriteFile romwritefiles[CONCURRENTWRITEFILES];
-
-RomWriteFile *getOpenRomWriteFile(int writefd)
-{
-    RomWriteFile* f;
-    if (writefd<0 || writefd>=CONCURRENTWRITEFILES) { return 0; }
-    f = romwritefiles+writefd;
-    if (!f->isopen) { return 0; }
-    return f;
-}
-
-// check if there is any open file with this name (for reading or writing)
-int haveActiveRomFile(const char* name)
-{
-    int i;
-    RomReadFile *rf;
-    RomWriteFile *wf;
-    for (i=0, rf=romreadfiles; i<CONCURRENTREADFILES; i++, rf++) 
-    {
-        if (rf->isopen && strcmplen(name,rf->img+8)) { return 1; }
-    }
-    for (i=0, wf=romwritefiles; i<CONCURRENTWRITEFILES; i++, wf++) 
-    {
-        if (wf->isopen && strcmplen(name,wf->filename)) { return 1; }
-    }
-    return 0;
-}
-*/
 
 IODescriptor* romfile_openwrite(const char *name)
 {
     unsigned int namelength = strcmplen(name, name);
     RomWriteFile* f;
     int i;
-
-//    // prevent write-accessing an already opened file
-//    if (haveActiveRomFile(name)) { return -1; }
-
-    // delete a possible previously existing file of the same name
-    romfile_delete(name);
 
     // make a new file descriptor
 	f = malloc(sizeof(RomWriteFile));
@@ -381,6 +364,12 @@ int romfile_closewrite(IODescriptor* descriptor)
     char* cursor;
     unsigned int i;
 
+    // prevent write-accessing a file already open for reading
+    if (haveActiveRomReadFile(f->filename)) { return -1; }
+
+    // delete a possible previously existing file of the same name
+    romfile_delete(f->filename);
+
     // calculate needed total size of rom file
     namelength = strcmplen(f->filename,f->filename);
     totalsize = 9 + namelength + f->size;
@@ -401,7 +390,7 @@ int romfile_closewrite(IODescriptor* descriptor)
     }    
 
     cursor = img;
-    // write first half of the header (when arborting now, the file is unusable)
+    // write first half of the header (when aborting now, the file is unusable)
     if (writeflash(cursor, "FI", 2)!=2) ABORT
     cursor += 4;    
     // write size information

@@ -30,3 +30,7 @@ void* topaddress_ram(void);
 
 // Manual heap initialization (normally done by startup code)
 void initheap(void* heaptop);
+
+// device instantiation calls
+void attachdevice_romfile();
+void attachdevice_sdcard();

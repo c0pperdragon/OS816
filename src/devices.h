@@ -17,6 +17,3 @@ struct Device {
 
 void attachdevice(const char* fileprefix, const Device* device);
 const Device* finddevice(const char* filename, int * out_prefixlength);
-
-void attachdevice_romfile();
-void attachdevice_sdcard();

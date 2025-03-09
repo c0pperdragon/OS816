@@ -6,7 +6,6 @@
     XREF _BEG_UDATA
     XREF _END_UDATA
     XREF ~~main
-    XREF ~~initheap
 	
     ; linking to bootloader code
     xdef ~~softreset
@@ -82,12 +81,6 @@ nocopy:
     SBC #768
     TCS
 	
-	; initialize heap with default size
-	JSL >~~topaddress_ram
-	PHX
-	PHA
-	JSL >~~initheap
-
     ; start the main function
     PEA #^argv
     PEA #<argv    
@@ -124,5 +117,6 @@ argv:
 wantreset:
     JMP >~~softreset    
     ENDS
+	
     
     END

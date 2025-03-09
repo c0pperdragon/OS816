@@ -147,7 +147,7 @@ void testmalloc(void)
 
 void testfileinput(void)
 {
-    FILE* f = fopen("x.txt","rb");
+    FILE* f = fopen("romfile:x.txt","rb");
     char buffer[11];
     int len;
     if (!f) { printf("Can not open x.txt\n"); return; }
@@ -164,7 +164,7 @@ void testfileoutput(void)
     unsigned int i;
     unsigned long sum;
     
-    if (! (f = fopen("y.txt","wb")) ) 
+    if (! (f = fopen("romfile:y.txt","wb")) ) 
     { 
         printf("Can not open for write\n"); 
         return; 
@@ -183,7 +183,7 @@ void testfileoutput(void)
         return; 
     }
     
-    if (! (f = fopen("y.txt", "rb")) )
+    if (! (f = fopen("romfile:y.txt", "rb")) )
     { 
         printf("Can not open for read\n"); 
         return; 
@@ -209,13 +209,13 @@ void testfseek(void)
     FILE* f;
     char buffer[100];
     
-    if (! (f = fopen("z","wb")) )                          { printf("fseek 1\n"); return; }
+    if (! (f = fopen("romfile:z","wb")) )                  { printf("fseek 1\n"); return; }
     if (fwrite("Fill in test string >____<.", 1,28,f)!=28) { printf("fseek 2\n"); return; }
     if (fseek(f, 21L, SEEK_SET)!=0)                        { printf("fseek 3\n"); return; }
     if (fwrite("GOOD", 1,4,f)!=4)                          { printf("fseek 4\n"); return; }
     if (fclose(f)!=0)                                      { printf("fseek 5\n"); return; }
 
-    if (! (f = fopen("z","rb")) )                          { printf("fseek 6\n"); return; }
+    if (! (f = fopen("romfile:z","rb")) )                  { printf("fseek 6\n"); return; }
     if (fread(buffer, 1, 28, f)!=28)                       { printf("fseek 7\n"); return; }
     teststr(buffer, "Fill in test string >GOOD<.");       // 21
     fseek(f, -7L, SEEK_END);
@@ -226,9 +226,10 @@ void testfseek(void)
 
 // run suit of tests
 int main(int argc, char** argv)
-{    
+{
     printf("Running test suite...\n");
-    
+    attachdevice_romfile();
+	
     // test memory allocation
     testmalloc();
 
