@@ -1,8 +1,6 @@
 #include <string.h>
 
-// Replace standard memcpy with an optimized version that
-// can make use of the MVN instruction (not really a fix, but speeds things up)
-
+/*
 void *memcpy(void* destination, const void* source, unsigned int len)
 {
 	#asm
@@ -38,7 +36,7 @@ void *memcpy(void* destination, const void* source, unsigned int len)
     return destination;
 }
 
-/*
+*/
 
 // MVN instruction constructed in RAM
 unsigned char mvn[4] =
@@ -118,4 +116,3 @@ void *memcpy(void* destination, const void* source, unsigned int len)
     return destination;
 }
 
-*/

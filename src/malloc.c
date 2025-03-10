@@ -8,6 +8,7 @@ typedef struct FreeBlock {
     struct FreeBlock *next;   // here also starts the payload for used blocks
 } FreeBlock;
 
+void initheap();
 #define MINBLOCKSIZE (sizeof(FreeBlock))
 
 FreeBlock *firstfree = NULL;
@@ -34,8 +35,9 @@ char *heapStart(void)
     return (char*) top1;
 }
 
-void initheap(void* heaptop)
+void initheap()
 {
+	void* heaptop = topaddress_ram();
     firstfree = (FreeBlock*) heapStart();
     firstfree->length = ((unsigned long)heaptop)-((unsigned long) firstfree);
     firstfree->next = 0;
@@ -48,11 +50,7 @@ void *longalloc(unsigned long payloadsize)
     FreeBlock** fowner;
     FreeBlock* f;
 	
-	// init heap at any first allocation
-	if (!heapisinitialized) 
-	{
-		initheap(topaddress_ram());
-	}
+	if (!heapisinitialized)	{ initheap(); }
 
     // keep track who is referencing the current block
     // search for first free block that is large enough
@@ -90,6 +88,35 @@ void *longalloc(unsigned long payloadsize)
     }
     // nothing suitable found
     return 0;
+}
+
+void *absolutealloc(unsigned long payloadstart, unsigned long payloadsize)
+{
+	unsigned long start = payloadstart-4;
+	unsigned long end = payloadstart+payloadsize;
+    FreeBlock* f;
+	
+	if (!heapisinitialized)	{ initheap(); }
+	
+	// find the block that completely covers the intended area with enough to spare
+	for (f=firstfree; f; f=f->next)
+    {
+		unsigned long f_end = ((unsigned long) f) + f->length;
+        if (start>=((unsigned long)f)+MINBLOCKSIZE && end<=f_end-MINBLOCKSIZE)
+		{
+			// split off trailing part
+			FreeBlock* trailing = (FreeBlock*)end;
+			trailing->length = f_end - end;
+			trailing->next = f->next;
+			// shrink original part and fix linking
+			f->length = start - (unsigned long) f;
+			f->next = trailing;
+			// store length of allocated block and return its address
+			((FreeBlock*)start) -> length = end-start;
+			return (void*) payloadstart;
+		}
+    }
+	return NULL;
 }
 
 void free(void *ptr)

@@ -28,9 +28,10 @@ void eraseflash(char* sectoraddress);
 void* topaddress_flash(void);
 void* topaddress_ram(void);
 
-// Manual heap initialization (normally done by startup code)
-void initheap(void* heaptop);
+// Try to allocate a fixes position at the heap 
+// (makes only sense soon after start as long as heap is not fragmented)
+void *absolutealloc(unsigned long payloadstart, unsigned long payloadsize);
 
 // device instantiation calls
-void attachdevice_romfile();
-void attachdevice_sdcard();
+void attachdevice_romfile(void);
+void attachdevice_sdcard(void);
