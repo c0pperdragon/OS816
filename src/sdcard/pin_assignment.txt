@@ -1,0 +1,12 @@
+         Serial   SDcard
+---------------------------------
+OUT 7             ChipSelect (2)
+OUT 6             MOSI       (3)
+OUT 5             SCK        (5)
+OUT 1    RTS
+OUT 0    TX
+IN 7     RX
+IN 6     CTS      
+IN 5              MISO       (7)
+                  3.3V       (4)
+                  GND        (6)
