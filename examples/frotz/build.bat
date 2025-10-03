@@ -9,3 +9,4 @@ WDCLN -HIE -ZCODE -D0,C00004 -CC01000 -O frotz.hex ..\..\bin\os816.obj -lfrotz -
 python ..\..\tools\addfiles.py frotz.hex games/zork1.z3 games/zork2.z3 games/zork3.z3
 
 del frotz.lib
+del src\*.obj
