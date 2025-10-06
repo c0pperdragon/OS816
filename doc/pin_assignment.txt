@@ -1,20 +1,21 @@
 PORTS    Serial   SDcard
 ---------------------------------
-OUT 7             MOSI       (3)
+OUT 7             MOSI       (2)
 OUT 6             SCK        (5)
-OUT 5             ChipSelect (2)
+OUT 5             ChipSelect (1)
 OUT 1    RTS
 OUT 0    TX
 IN  7    RX
 IN  6    CTS      
 IN  0             MISO       (7)
                   3.3V       (4)
+                  GND        (3)
                   GND        (6)
 
-    M       M     
-    I G S   O
-    S N C 3 S C
-    O D K V I S
+    M         M     
+    I G S   G O
+    S N C 3 N S C
+    O D K V D I S
  +----------------+
  |8 7 6 5 4 3 2 1  \
  |                9 \
