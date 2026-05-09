@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "OS816 RAM board")
-		(rev "1")
+		(rev "2")
 	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_01x03"
@@ -2899,7 +2899,7 @@
 	)
 	(wire
 		(pts
-			(xy 151.13 93.98) (xy 151.13 101.6)
+			(xy 151.13 93.98) (xy 151.13 99.06)
 		)
 		(stroke
 			(width 0)
@@ -3499,7 +3499,7 @@
 	)
 	(wire
 		(pts
-			(xy 179.07 111.76) (xy 179.07 119.38)
+			(xy 179.07 114.3) (xy 179.07 119.38)
 		)
 		(stroke
 			(width 0)
@@ -4357,8 +4357,8 @@
 		)
 		(uuid "afd2ef8a-c5b8-4ccb-96d6-27469752e9b0")
 	)
-	(label "GND"
-		(at 151.13 101.6 90)
+	(label "VCC"
+		(at 151.13 99.06 90)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4407,8 +4407,8 @@
 		)
 		(uuid "bab4720e-df38-4778-ae5c-f669a3c53a00")
 	)
-	(label "VCC"
-		(at 179.07 111.76 270)
+	(label "GND"
+		(at 179.07 114.3 270)
 		(effects
 			(font
 				(size 1.27 1.27)
