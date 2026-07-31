@@ -3627,6 +3627,16 @@
 		)
 		(uuid "0b0def19-b2ee-4598-b2d4-623e3aebbb9d")
 	)
+	(label "USEHIGH"
+		(at 110.49 49.53 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0f7c0867-822b-4a08-ab18-fbbefb909ddf")
+	)
 	(label "GND"
 		(at 176.53 59.69 270)
 		(effects
