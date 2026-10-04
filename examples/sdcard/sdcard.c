@@ -7,8 +7,9 @@
 #define SCLK    0x10
 
 
-const unsigned char CMD0[6]           = { 0x40|0, 0,0,0,0,       0x94|1 };
-const unsigned char CMD8_000001AA[6]  = { 0x40|8, 0,0,0x01,0xAA, 0x86|1 };
+const unsigned char CMD0[6]           = { 0x40|0, 0,0,0,0,       0x94|1 };  // reset SDcard
+const unsigned char CMD8_000001AA[6]  = { 0x40|8, 0,0,0x01,0xAA, 0x86|1 };  // interface condition
+const unsigned char CMD9[6]           = { 0x40|9, 0,0,0,0,       1 };       // get CSD
 const unsigned char CMD16_00000200[6] = { 0x40|16, 0,0,2,0,      1 };
 const unsigned char CMD41_00000000[6] = { 0x40|41, 0,0,0,0,      1 };
 const unsigned char CMD41_40000000[6] = { 0x40|41, 0x40,0,0,0,   1 };
@@ -55,7 +56,7 @@ unsigned int sdcard_readbyte(void)
 	return x;
 }
 
-unsigned int cmd_R1(const unsigned char* cmd)
+unsigned int cmd_R1_resp(const unsigned char* cmd, unsigned char* response, unsigned int responselength)
 {
 	unsigned int i;
 	sdcard_start();
@@ -68,6 +69,17 @@ unsigned int cmd_R1(const unsigned char* cmd)
 	{
 		unsigned int r = sdcard_readbyte();
 		if ((r&0x80)!=0) { continue; }
+		if (responselength>0) 
+		{			
+		   waitfordata:
+			r = sdcard_readbyte();
+			if ((r&0x80)!=0) { goto waitfordata; }
+			response[0] = r;
+			for (i=1; i<responselength; i++)
+			{
+				response[i] = sdcard_readbyte();
+			}
+		}
 		sdcard_stop();
 		return r;
 	}
@@ -75,7 +87,12 @@ unsigned int cmd_R1(const unsigned char* cmd)
 	return 0xff;
 }
 
-unsigned int cmd_R7(const unsigned char* cmd, unsigned char* response)
+unsigned int cmd_R1(const unsigned char* cmd)
+{
+	return cmd_R1_resp(cmd, 0,0);
+}	
+
+unsigned int cmd_R7(const unsigned char* cmd, unsigned char* response, unsigned int responselength)
 {
 	unsigned int i;
 	sdcard_start();
@@ -88,7 +105,7 @@ unsigned int cmd_R7(const unsigned char* cmd, unsigned char* response)
 	{
 		unsigned int r = sdcard_readbyte();
 		if ((r&0x80)!=0) { continue; }
-		for (i=0; i<4; i++)
+		for (i=0; i<responselength; i++)
 		{
 			response[i] = sdcard_readbyte();
 		}
@@ -104,6 +121,7 @@ unsigned int init(void)
 {
 	unsigned int r,i;
 	unsigned char x[4];
+	unsigned char csd[16];
 	
     sendstr("Start initializing sequence\r\n");
 	// wait a bit
@@ -134,7 +152,7 @@ unsigned int init(void)
 		}
 	}
 	// set card interface mode
-	r = cmd_R7(CMD8_000001AA,x);
+	r = cmd_R7(CMD8_000001AA,x,4);
 	sendstr("CMD8 response:"); sendnum(r); sendstr("\r\n");
 	
 	if ((r!=0x00) && (r!=0x01))   // error or no response 
@@ -185,6 +203,20 @@ unsigned int init(void)
 		sendstr("Can not set block size\r\n");
 		return 0;
 	}
+	// read the card specific data
+	if (cmd_R1_resp(CMD9,csd,16)==0xff) 
+	{ 
+		sendstr("Can not read CSD\r\n");
+		return 0;
+	}
+	else
+	{	
+		unsigned int i;
+		sendstr("CSD:");
+		for (i=0; i<16; i++) { sendstr(" "); sendnum(csd[i]); }
+		sendstr("\r\n");
+	}
+	
 	return 1;
 }
 
