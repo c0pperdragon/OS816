@@ -15,6 +15,8 @@ const unsigned char CMD41_00000000[6] = { 0x40|41, 0,0,0,0,      1 };
 const unsigned char CMD41_40000000[6] = { 0x40|41, 0x40,0,0,0,   1 };
 const unsigned char CMD55[6]          = { 0x40|55, 0,0,0,0,      1 };
 
+unsigned long int capacity; // total capacity in 512-byte sectors
+
 void sdcard_start(void)
 {
 	portout(SERHIGH | MOSI);
@@ -65,7 +67,7 @@ unsigned int cmd_R1_resp(const unsigned char* cmd, unsigned char* response, unsi
 	{
 		sdcard_writebyte(cmd[i]);
 	}
-	for (i=0; i<10; i++)  // reply can take some time
+	for (i=0; i<20; i++)  // reply can take some time
 	{
 		unsigned int r = sdcard_readbyte();
 		if ((r&0x80)!=0) { continue; }
@@ -101,7 +103,7 @@ unsigned int cmd_R7(const unsigned char* cmd, unsigned char* response, unsigned 
 	{
 		sdcard_writebyte(cmd[i]);
 	}
-	for (i=0; i<10; i++) // reply can take some time
+	for (i=0; i<20; i++) // reply can take some time
 	{
 		unsigned int r = sdcard_readbyte();
 		if ((r&0x80)!=0) { continue; }
@@ -145,7 +147,7 @@ unsigned int init(void)
 		{
 			sendstr("No correct response to idle command\r\n");
 		}
-		if (i==5) 
+		if (i==10) 
 		{
 			sendstr("Giving up on idle commands\r\n");
 			return 0;
@@ -215,6 +217,42 @@ unsigned int init(void)
 		sendstr("CSD:");
 		for (i=0; i<16; i++) { sendstr(" "); sendnum(csd[i]); }
 		sendstr("\r\n");
+		// decode the total capacity in sectors
+		if (csd[0]==0)   // CSD version 1.0
+		{
+			unsigned int c_size;
+			unsigned int read_bl_len;
+//			unsigned int write_bl_len;
+			unsigned int c_size_mult;
+			c_size = csd[15-9] & 0x03;
+			c_size = (c_size<<8) | csd[15-8];
+			c_size = (c_size<<2) | (csd[15-7]>>6);
+			read_bl_len = csd[15-10] & 0x0f;
+//			write_bl_len = ((csd[15-3]<<2) | (csd[15-2]>>6)) & 0x0f;
+			c_size_mult = ((csd[15-6]<<1) | (csd[15-5]>>7)) & 0x07;
+//			sendstr("c_size: "); sendnum(c_size); sendstr("\r\n");
+//			sendstr("read_bl_len: "); sendnum(read_bl_len); sendstr("\r\n");
+//			sendstr("write_bl_len: "); sendnum(write_bl_len); sendstr("\r\n");
+//			sendstr("c_size_mult: "); sendnum(c_size_mult); sendstr("\r\n");
+			if (read_bl_len<9 || read_bl_len>11) { sendstr("read_bl_len invalid\r\n"); return 0; }
+			if (c_size_mult>7) { sendstr("c_size_mult invalid\r\n"); return 0; }
+			capacity = c_size+1;
+			capacity = capacity << (c_size_mult+2);
+			capacity = capacity << (read_bl_len-9);
+		}
+		else if (csd[0]==0x40)  // CSD version 2.0
+		{
+			capacity = csd[15-8] & 0x3f;
+			capacity = (capacity<<8) | csd[15-7];
+			capacity = (capacity<<8) | csd[15-6];
+			capacity = capacity+1;
+			capacity = capacity<<10;
+		}
+		else
+		{
+			sendstr("Unknown CSD type\r\n");
+			return 0;
+		}
 	}
 	
 	return 1;
@@ -222,7 +260,15 @@ unsigned int init(void)
 
 int main(int argc, char** argv)
 {
-	if (init()) { sendstr ("Initialization suceeded\r\n"); }
+	if (init()) 
+	{ 
+		sendstr("Initialization suceeded\r\n"); 
+		sendstr("capacity: ");
+		sendnum((unsigned int) ((capacity>>16) & 0xffff) );
+		sendstr(":");
+		sendnum((unsigned int) (capacity & 0xffff));
+		sendstr("\r\n");
+	}
     return (0); 
 }
 
