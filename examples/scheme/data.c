@@ -2,6 +2,13 @@
 #include <string.h>
 #include "data.h"
 
+// singular basic values
+Value Nothing = {0, TYPE_NOTHING}; 
+Value Empty = {0, TYPE_EMPTY}; 
+Value False = {0, TYPE_BOOL};
+Value True = {1, TYPE_BOOL};
+
+
 // non-collecting allocator. simple as can be, but will run out of memory eventually.
 Cell *cellbufferptr = NULL;
 unsigned int cellbufferremaining = 0;
@@ -66,12 +73,6 @@ Value create_cell_v(Value car, Value cdr)
     v.cell = create_cell(car, cdr);
     return v;
 }
-Value get_nil_v(void)
-{
-    Value v;
-    v.cell = NULL;
-    return v;
-}
 Value get_symbol_v(unsigned char* identifier)
 {
     Value v;
@@ -83,13 +84,6 @@ Value get_int_v(int i)
 {
     Value v;
     v.basic.type = TYPE_INT;
-    v.basic.value.s = i;
-    return v;
-}
-Value get_bool_v(int i)
-{
-    Value v;
-    v.basic.type = TYPE_BOOL;
     v.basic.value.s = i;
     return v;
 }

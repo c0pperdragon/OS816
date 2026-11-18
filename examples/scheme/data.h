@@ -1,12 +1,6 @@
 
 // These data structures assume a little-endian system with 16-bit words 
 
-// Specifies tags for basic types (everthing with no high bit is a Node reference)
-#define TYPE_SYMBOL   0x8000
-#define TYPE_INT      0x8001
-#define TYPE_BOOL     0x8002
-
-#define MASK_ANYBASIC 0x8000
 
 // basic values are tagged with their 16-bit type and contain 16 bit of information  
 // which can be either signed or unsigned
@@ -35,6 +29,19 @@ typedef struct Cell
     Value cdr;
 } Cell;
 
+// Specifies tags for basic types (everything with no high bit is a Node reference)
+#define TYPE_NOTHING  0x8000
+#define TYPE_EMPTY    0x8001
+#define TYPE_SYMBOL   0x8002
+#define TYPE_INT      0x8003
+#define TYPE_BOOL     0x8004
+#define MASK_ANYBASIC 0x8000
+
+// singular basic values
+extern Value Nothing; 
+extern Value Empty; 
+extern Value False;
+extern Value True;
 
 // API accessing data management 
 
@@ -47,7 +54,5 @@ unsigned char* get_identifier(unsigned int symbol);
 
 // convenience methods to create values
 Value create_cell_v(Value car, Value cdr);
-Value get_nil_v(void);
 Value get_symbol_v(unsigned char* identifier);
 Value get_int_v(int i);
-Value get_bool_v(int i);

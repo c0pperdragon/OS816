@@ -8,21 +8,17 @@
 
 int main(int arc, char** argv)
 {
-    Value v = 
-    create_cell_v(get_symbol_v("HELLO"),
-      create_cell_v(get_symbol_v("WORLD"),
-        create_cell_v(get_symbol_v("!"),
-          create_cell_v(get_int_v(4711),
-            create_cell_v(get_bool_v(0),
-              create_cell_v(create_cell_v(get_symbol_v("x"),get_symbol_v("y")),
-                get_nil_v()
-              )
-            )
-          )
-        )
-      )
-    );
-    writevalue(v);
-    printf("\n");
+    puts("Small scheme interpreter");
+    receiveline(']',0);
+    for (;;)
+    {
+        Value v = readvalue();
+        if (v.basic.type != TYPE_NOTHING)
+        {
+            writevalue(v);
+            putchar('\n');
+        }
+        receiveline(']',1);
+    }
     return 0;
 }
