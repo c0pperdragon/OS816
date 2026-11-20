@@ -35,7 +35,13 @@ typedef struct Cell
 #define TYPE_SYMBOL   0x8002
 #define TYPE_INT      0x8003
 #define TYPE_BOOL     0x8004
-#define MASK_ANYBASIC 0x8000
+#define TYPE_BUILTIN  0x8005
+
+#define ISBASIC(v) ((v.basic.type & 0x8000)!=0)
+#define ISLIST(v) ((v.basic.type & 0x8000)==0)
+#define ISSYMBOL(v) (v.basic.type==TYPE_SYMBOL)
+#define ISINT(v) (v.basic.type==TYPE_INT)
+#define ISBUILTIN(v) (v.basic.type==TYPE_BUILTIN)
 
 // singular basic values
 extern Value Nothing; 
@@ -52,7 +58,12 @@ Cell* create_cell(Value car, Value cdr);
 unsigned int get_symbol(unsigned char* identifier);
 unsigned char* get_identifier(unsigned int symbol);
 
+// get/set symbols value in the global environment
+Value get_global_value(unsigned int symbol);
+void set_global_value(unsigned int symbol, Value v);
+
 // convenience methods to create values
 Value create_cell_v(Value car, Value cdr);
 Value get_symbol_v(unsigned char* identifier);
 Value get_int_v(int i);
+Value get_builtint_v(unsigned int u);

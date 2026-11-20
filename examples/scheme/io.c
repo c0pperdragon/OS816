@@ -2,7 +2,7 @@
 #include "data.h"
 #include "io.h"
 
-#define BUFFERSIZE 79
+#define BUFFERSIZE 78
 unsigned char buffer[BUFFERSIZE];
 unsigned int cursor;
 
@@ -15,6 +15,7 @@ void receiveline(unsigned int prompt, int ifempty)
     cursor = 0;
     buffer[0] = '\0';
     putchar(prompt);
+    putchar(' ');
     for (;;)
     {
         unsigned int c = getchar();
@@ -91,6 +92,7 @@ Value parsebasicvalue(unsigned char* txt, int len)
 
 #define THIS c=buffer[cursor]
 #define NEXT cursor++; THIS
+#define QUOTE 39
 Value readvalue()
 {
     int start;
@@ -102,8 +104,14 @@ Value readvalue()
     if (!c) { return Nothing; }
     if (c==')' || c=='.') { NEXT; return Nothing; }  // TODO: error reporting
 
+    // found quotation mark as shortcut for (quote .. )
+    if (c==QUOTE)
+    {
+        NEXT;
+        return create_cell_v(get_symbol_v("quote"), create_cell_v(readvalue(), Empty));
+    }
     // parse a list
-    if (c=='(') 
+    else if (c=='(') 
     {
         Value head = Empty;
         Cell* tail = NULL;
@@ -135,7 +143,7 @@ Value readvalue()
     
     // read whole token
     start = cursor;
-    while (c>32 && c!='(' && c!=')' && c!='.') { NEXT; }
+    while (c>32 && c!='(' && c!=')' && c!='.' && c!=QUOTE) { NEXT; }
     // parse basic value
     return parsebasicvalue(buffer+start,cursor-start);
 }
@@ -177,7 +185,7 @@ void writevalue(Value v)
         case TYPE_SYMBOL: 
             {
                 unsigned char* id = get_identifier(v.basic.value.u);
-             putchar('@');
+//             putchar('@');
                 while (*id) { putchar (*(id++)); }
             }
             break;
@@ -200,6 +208,10 @@ void writevalue(Value v)
             putchar('#');
             putchar(v.basic.value.s ? 't' : 'f');
             break;
+        case TYPE_BUILTIN:
+            putchar('#');
+            writeunsigned(v.basic.value);
+            break;        
         default:  // everything else is a non-empty list
             {
                 Cell* c = v.cell;
@@ -214,7 +226,7 @@ void writevalue(Value v)
                     } 
                     putchar(' ');
                     // ending of improper list
-                    if (c->cdr.basic.type & MASK_ANYBASIC)
+                    if (ISBASIC(c->cdr))
                     {
                         putchar('.');
                         putchar(' ');

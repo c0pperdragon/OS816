@@ -29,43 +29,60 @@ Cell* create_cell(Value car, Value cdr)
     return c;
 }
 
-// symbol table manager - extra simple to begin with
+// symbol table manager
 typedef struct SymbolEntry 
 {
-    struct SymbolEntry* next;
-    unsigned char identifier[1];
+    unsigned char *identifier;  // string pointer (never freed)
+    Value value;                // value assigned to the symbol in global environment
 } SymbolEntry;
 SymbolEntry* symboltable = NULL;
+unsigned int symboltablelength = 0;
+unsigned int symboltableused = 0;
 
 unsigned int get_symbol(unsigned char* identifier)
 {
-    SymbolEntry* last = NULL;
-    SymbolEntry* n = symboltable;
-    unsigned int idx = 0;
-    while (n)
+    unsigned int idx=0;
+    for (idx=0; idx<symboltableused; idx++)
     {
-        if (strcmp(identifier, n->identifier)==0) { return idx; }
-        last = n;
-        n = n->next;
-        idx++;
+        if (strcmp(identifier, symboltable[idx].identifier)==0) { return idx; }
     }
-    n = (SymbolEntry*) malloc(sizeof(SymbolEntry) + strlen(identifier));
-    n->next = NULL;
-    strcpy(n->identifier, identifier);
-    if (last) { last->next = n; }
-    else { symboltable = n; }
+    if (symboltableused>=symboltablelength)
+    {
+        unsigned int newlength = symboltablelength ? symboltablelength*2 : 32;
+        SymbolEntry* newtable = malloc(newlength*sizeof(SymbolEntry));
+        if (symboltable) 
+        {
+            memcpy(newtable,symboltable,symboltablelength*sizeof(SymbolEntry));
+            free(symboltable); 
+        }
+        symboltable = newtable;
+        symboltablelength = newlength;
+    }
+    {
+        unsigned char* newi = malloc(strlen(identifier)+1);
+        strcpy(newi, identifier);
+        idx = symboltableused++;
+        symboltable[idx].identifier = newi;
+        symboltable[idx].value.basic.type = TYPE_NOTHING;
+    }
     return idx;
 }
+
 unsigned char* get_identifier(unsigned int symbol)
 {
-    SymbolEntry* n = symboltable;
-    while (symbol) 
-    { 
-        symbol--;
-        n = n->next;
-    }
-    return n->identifier;
+    return symboltable[symbol].identifier;
 }
+
+Value get_global_value(unsigned int symbol)
+{
+    return symboltable[symbol].value;
+}
+
+void set_global_value(unsigned int symbol, Value v)
+{
+    symboltable[symbol].value = v;
+}
+
 
 Value create_cell_v(Value car, Value cdr)
 {
@@ -85,5 +102,12 @@ Value get_int_v(int i)
     Value v;
     v.basic.type = TYPE_INT;
     v.basic.value.s = i;
+    return v;
+}
+Value get_builtint_v(unsigned int u)
+{
+    Value v;
+    v.basic.type = TYPE_BUILTIN;
+    v.basic.value.u = u;
     return v;
 }
